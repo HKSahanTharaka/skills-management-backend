@@ -1,37 +1,45 @@
 /**
  * Project Controller
- * 
+ *
  * This controller handles all CRUD operations for projects management.
  * Includes validation, database operations, and error handling.
  */
 
 const { pool } = require('../config/database');
+const { formatDate } = require('../utils/helpers');
 
 /**
  * Create Project
- * 
+ *
  * Steps:
  * 1. Validate all required fields (project_name, description, start_date, end_date, status)
  * 2. Validate dates (end_date must be after start_date)
  * 3. Validate status enum
  * 4. Insert into database
  * 5. Return created project
- * 
+ *
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next function
  */
 const createProject = async (req, res, next) => {
   try {
-    const { project_name, description, start_date, end_date, status = 'Planning' } = req.body;
+    const {
+      project_name,
+      description,
+      start_date,
+      end_date,
+      status = 'Planning',
+    } = req.body;
 
     // Validate required fields
     if (!project_name || !start_date || !end_date) {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Missing required fields: project_name, start_date, and end_date are required'
-        }
+          message:
+            'Missing required fields: project_name, start_date, and end_date are required',
+        },
       });
     }
 
@@ -41,8 +49,8 @@ const createProject = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         error: {
-          message: `Invalid status. Must be one of: ${validStatuses.join(', ')}`
-        }
+          message: `Invalid status. Must be one of: ${validStatuses.join(', ')}`,
+        },
       });
     }
 
@@ -54,8 +62,8 @@ const createProject = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Invalid start_date format. Use YYYY-MM-DD format'
-        }
+          message: 'Invalid start_date format. Use YYYY-MM-DD format',
+        },
       });
     }
 
@@ -63,8 +71,8 @@ const createProject = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Invalid end_date format. Use YYYY-MM-DD format'
-        }
+          message: 'Invalid end_date format. Use YYYY-MM-DD format',
+        },
       });
     }
 
@@ -72,8 +80,8 @@ const createProject = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'end_date must be after start_date'
-        }
+          message: 'end_date must be after start_date',
+        },
       });
     }
 
@@ -89,10 +97,17 @@ const createProject = async (req, res, next) => {
       [result.insertId]
     );
 
+    // Format dates to YYYY-MM-DD
+    const project = createdProjects[0];
+    if (project) {
+      project.start_date = formatDate(project.start_date);
+      project.end_date = formatDate(project.end_date);
+    }
+
     res.status(201).json({
       success: true,
       message: 'Project created successfully',
-      data: createdProjects[0]
+      data: project,
     });
   } catch (error) {
     next(error);
@@ -101,13 +116,13 @@ const createProject = async (req, res, next) => {
 
 /**
  * Get All Projects
- * 
+ *
  * Supports:
  * - Filtering by status
  * - Date range filtering (start_date, end_date)
  * - Search by project name
  * - Return projects with required skills
- * 
+ *
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next function
@@ -151,7 +166,10 @@ const getAllProjects = async (req, res, next) => {
     }
 
     // Get total count for pagination
-    const countQuery = query.replace('SELECT DISTINCT p.*', 'SELECT COUNT(DISTINCT p.id) as total');
+    const countQuery = query.replace(
+      'SELECT DISTINCT p.*',
+      'SELECT COUNT(DISTINCT p.id) as total'
+    );
     const [countResult] = await pool.execute(countQuery, params);
     const total = countResult[0].total;
 
@@ -185,9 +203,12 @@ const getAllProjects = async (req, res, next) => {
           [project.id]
         );
 
+        // Format dates to YYYY-MM-DD
         return {
           ...project,
-          required_skills: requiredSkills
+          start_date: formatDate(project.start_date),
+          end_date: formatDate(project.end_date),
+          required_skills: requiredSkills,
         };
       })
     );
@@ -195,7 +216,7 @@ const getAllProjects = async (req, res, next) => {
     // Build response
     const response = {
       success: true,
-      data: projectsWithSkills
+      data: projectsWithSkills,
     };
 
     // Add pagination if provided
@@ -205,7 +226,7 @@ const getAllProjects = async (req, res, next) => {
         page: parseInt(page),
         limit: parseInt(limit),
         total: total,
-        totalPages: totalPages
+        totalPages: totalPages,
       };
     }
 
@@ -217,13 +238,13 @@ const getAllProjects = async (req, res, next) => {
 
 /**
  * Get Single Project
- * 
+ *
  * Steps:
  * 1. Get project by ID
  * 2. Include required skills (JOIN with project_required_skills and skills)
  * 3. Include allocated personnel (JOIN with project_allocations and personnel)
  * 4. Return 404 if not found
- * 
+ *
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next function
@@ -243,8 +264,8 @@ const getProjectById = async (req, res, next) => {
       return res.status(404).json({
         success: false,
         error: {
-          message: 'Project not found'
-        }
+          message: 'Project not found',
+        },
       });
     }
 
@@ -288,16 +309,22 @@ const getProjectById = async (req, res, next) => {
       [id]
     );
 
-    // Combine project data with required skills and allocated personnel
+    // Format dates to YYYY-MM-DD and combine project data with required skills and allocated personnel
     const projectData = {
       ...project,
+      start_date: formatDate(project.start_date),
+      end_date: formatDate(project.end_date),
       required_skills: requiredSkills,
-      allocated_personnel: allocatedPersonnel
+      allocated_personnel: allocatedPersonnel.map((person) => ({
+        ...person,
+        start_date: formatDate(person.start_date),
+        end_date: formatDate(person.end_date),
+      })),
     };
 
     res.status(200).json({
       success: true,
-      data: projectData
+      data: projectData,
     });
   } catch (error) {
     next(error);
@@ -306,14 +333,14 @@ const getProjectById = async (req, res, next) => {
 
 /**
  * Update Project
- * 
+ *
  * Steps:
  * 1. Validate project exists
  * 2. Validate dates if changed (end_date must be after start_date)
  * 3. Validate status if changed
  * 4. Update fields
  * 5. Return updated project
- * 
+ *
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next function
@@ -321,7 +348,8 @@ const getProjectById = async (req, res, next) => {
 const updateProject = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { project_name, description, start_date, end_date, status } = req.body;
+    const { project_name, description, start_date, end_date, status } =
+      req.body;
 
     // Check project exists
     const [existingProjects] = await pool.execute(
@@ -333,8 +361,8 @@ const updateProject = async (req, res, next) => {
       return res.status(404).json({
         success: false,
         error: {
-          message: 'Project not found'
-        }
+          message: 'Project not found',
+        },
       });
     }
 
@@ -353,8 +381,8 @@ const updateProject = async (req, res, next) => {
         return res.status(400).json({
           success: false,
           error: {
-            message: 'Invalid start_date format. Use YYYY-MM-DD format'
-          }
+            message: 'Invalid start_date format. Use YYYY-MM-DD format',
+          },
         });
       }
 
@@ -362,8 +390,8 @@ const updateProject = async (req, res, next) => {
         return res.status(400).json({
           success: false,
           error: {
-            message: 'Invalid end_date format. Use YYYY-MM-DD format'
-          }
+            message: 'Invalid end_date format. Use YYYY-MM-DD format',
+          },
         });
       }
 
@@ -371,8 +399,8 @@ const updateProject = async (req, res, next) => {
         return res.status(400).json({
           success: false,
           error: {
-            message: 'end_date must be after start_date'
-          }
+            message: 'end_date must be after start_date',
+          },
         });
       }
     }
@@ -384,8 +412,8 @@ const updateProject = async (req, res, next) => {
         return res.status(400).json({
           success: false,
           error: {
-            message: `Invalid status. Must be one of: ${validStatuses.join(', ')}`
-          }
+            message: `Invalid status. Must be one of: ${validStatuses.join(', ')}`,
+          },
         });
       }
     }
@@ -420,8 +448,8 @@ const updateProject = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'No fields provided to update'
-        }
+          message: 'No fields provided to update',
+        },
       });
     }
 
@@ -440,10 +468,17 @@ const updateProject = async (req, res, next) => {
       [id]
     );
 
+    // Format dates to YYYY-MM-DD
+    const project = updatedProjects[0];
+    if (project) {
+      project.start_date = formatDate(project.start_date);
+      project.end_date = formatDate(project.end_date);
+    }
+
     res.status(200).json({
       success: true,
       message: 'Project updated successfully',
-      data: updatedProjects[0]
+      data: project,
     });
   } catch (error) {
     next(error);
@@ -452,12 +487,12 @@ const updateProject = async (req, res, next) => {
 
 /**
  * Delete Project
- * 
+ *
  * Steps:
  * 1. Validate project exists
  * 2. Delete project (CASCADE handles related records)
  * 3. Return success message
- * 
+ *
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next function
@@ -476,20 +511,17 @@ const deleteProject = async (req, res, next) => {
       return res.status(404).json({
         success: false,
         error: {
-          message: 'Project not found'
-        }
+          message: 'Project not found',
+        },
       });
     }
 
     // Delete project (CASCADE handles related records in project_required_skills and project_allocations)
-    await pool.execute(
-      'DELETE FROM projects WHERE id = ?',
-      [id]
-    );
+    await pool.execute('DELETE FROM projects WHERE id = ?', [id]);
 
     res.status(200).json({
       success: true,
-      message: 'Project deleted successfully'
+      message: 'Project deleted successfully',
     });
   } catch (error) {
     next(error);
@@ -498,7 +530,7 @@ const deleteProject = async (req, res, next) => {
 
 /**
  * Add Required Skill to Project
- * 
+ *
  * Steps:
  * 1. Validate project exists
  * 2. Validate skill exists
@@ -506,7 +538,7 @@ const deleteProject = async (req, res, next) => {
  * 4. Check if skill already required
  * 5. Insert into project_required_skills
  * 6. Return assignment details
- * 
+ *
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next function
@@ -521,19 +553,26 @@ const addRequiredSkillToProject = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Missing required fields: skill_id and minimum_proficiency are required'
-        }
+          message:
+            'Missing required fields: skill_id and minimum_proficiency are required',
+        },
       });
     }
 
     // Validate minimum_proficiency enum
-    const validProficiencyLevels = ['Beginner', 'Intermediate', 'Advanced', 'Expert'];
+    const validProficiencyLevels = [
+      'Beginner',
+      'Intermediate',
+      'Advanced',
+      'Expert',
+    ];
     if (!validProficiencyLevels.includes(minimum_proficiency)) {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Invalid minimum_proficiency. Must be one of: Beginner, Intermediate, Advanced, Expert'
-        }
+          message:
+            'Invalid minimum_proficiency. Must be one of: Beginner, Intermediate, Advanced, Expert',
+        },
       });
     }
 
@@ -547,8 +586,8 @@ const addRequiredSkillToProject = async (req, res, next) => {
       return res.status(404).json({
         success: false,
         error: {
-          message: 'Project not found'
-        }
+          message: 'Project not found',
+        },
       });
     }
 
@@ -562,8 +601,8 @@ const addRequiredSkillToProject = async (req, res, next) => {
       return res.status(404).json({
         success: false,
         error: {
-          message: 'Skill not found'
-        }
+          message: 'Skill not found',
+        },
       });
     }
 
@@ -577,8 +616,8 @@ const addRequiredSkillToProject = async (req, res, next) => {
       return res.status(409).json({
         success: false,
         error: {
-          message: 'Skill is already required for this project'
-        }
+          message: 'Skill is already required for this project',
+        },
       });
     }
 
@@ -608,7 +647,7 @@ const addRequiredSkillToProject = async (req, res, next) => {
     res.status(201).json({
       success: true,
       message: 'Required skill added to project successfully',
-      data: assignment[0]
+      data: assignment[0],
     });
   } catch (error) {
     // Handle duplicate assignment error from database
@@ -616,8 +655,8 @@ const addRequiredSkillToProject = async (req, res, next) => {
       return res.status(409).json({
         success: false,
         error: {
-          message: 'Skill is already required for this project'
-        }
+          message: 'Skill is already required for this project',
+        },
       });
     }
     next(error);
@@ -626,13 +665,13 @@ const addRequiredSkillToProject = async (req, res, next) => {
 
 /**
  * Update Required Skill
- * 
+ *
  * Steps:
  * 1. Validate assignment exists
  * 2. Validate minimum_proficiency if provided
  * 3. Update minimum proficiency level
  * 4. Return updated assignment
- * 
+ *
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next function
@@ -647,19 +686,25 @@ const updateRequiredSkill = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Missing required field: minimum_proficiency is required'
-        }
+          message: 'Missing required field: minimum_proficiency is required',
+        },
       });
     }
 
     // Validate minimum_proficiency enum
-    const validProficiencyLevels = ['Beginner', 'Intermediate', 'Advanced', 'Expert'];
+    const validProficiencyLevels = [
+      'Beginner',
+      'Intermediate',
+      'Advanced',
+      'Expert',
+    ];
     if (!validProficiencyLevels.includes(minimum_proficiency)) {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Invalid minimum_proficiency. Must be one of: Beginner, Intermediate, Advanced, Expert'
-        }
+          message:
+            'Invalid minimum_proficiency. Must be one of: Beginner, Intermediate, Advanced, Expert',
+        },
       });
     }
 
@@ -673,8 +718,8 @@ const updateRequiredSkill = async (req, res, next) => {
       return res.status(404).json({
         success: false,
         error: {
-          message: 'Project required skill assignment not found'
-        }
+          message: 'Project required skill assignment not found',
+        },
       });
     }
 
@@ -703,7 +748,7 @@ const updateRequiredSkill = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: 'Required skill updated successfully',
-      data: updatedAssignment[0]
+      data: updatedAssignment[0],
     });
   } catch (error) {
     next(error);
@@ -712,12 +757,12 @@ const updateRequiredSkill = async (req, res, next) => {
 
 /**
  * Remove Required Skill
- * 
+ *
  * Steps:
  * 1. Validate assignment exists
  * 2. Delete from project_required_skills
  * 3. Return success message
- * 
+ *
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next function
@@ -736,8 +781,8 @@ const removeRequiredSkill = async (req, res, next) => {
       return res.status(404).json({
         success: false,
         error: {
-          message: 'Project required skill assignment not found'
-        }
+          message: 'Project required skill assignment not found',
+        },
       });
     }
 
@@ -749,7 +794,7 @@ const removeRequiredSkill = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: 'Required skill removed from project successfully'
+      message: 'Required skill removed from project successfully',
     });
   } catch (error) {
     next(error);
@@ -764,5 +809,5 @@ module.exports = {
   deleteProject,
   addRequiredSkillToProject,
   updateRequiredSkill,
-  removeRequiredSkill
+  removeRequiredSkill,
 };

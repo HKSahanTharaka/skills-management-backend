@@ -1,6 +1,6 @@
 /**
  * Personnel Routes
- * 
+ *
  * These routes handle all CRUD operations for personnel management.
  */
 
@@ -15,11 +15,11 @@ const {
   getPersonnelSkills,
   assignSkillToPersonnel,
   updateSkillProficiency,
-  removeSkillFromPersonnel
+  removeSkillFromPersonnel,
 } = require('../controllers/personnel.controller');
 const {
   validateCreatePersonnel,
-  validateUpdatePersonnel
+  validateUpdatePersonnel,
 } = require('../validators/personnel.validator');
 
 // GET /api/personnel - Get all personnel with optional filters, search, and pagination
@@ -51,4 +51,3 @@ router.put('/:id', validateUpdatePersonnel, updatePersonnel);
 router.delete('/:id', deletePersonnel);
 
 module.exports = router;
-

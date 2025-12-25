@@ -1,6 +1,6 @@
 /**
  * Authentication Routes
- * 
+ *
  * These routes handle user registration and login
  */
 
@@ -15,4 +15,3 @@ router.post('/register', register);
 router.post('/login', login);
 
 module.exports = router;
-

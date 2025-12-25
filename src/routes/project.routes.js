@@ -1,6 +1,6 @@
 /**
  * Project Routes
- * 
+ *
  * These routes handle all CRUD operations for projects management.
  */
 
@@ -14,7 +14,7 @@ const {
   deleteProject,
   addRequiredSkillToProject,
   updateRequiredSkill,
-  removeRequiredSkill
+  removeRequiredSkill,
 } = require('../controllers/project.controller');
 
 // GET /api/projects - Get all projects with optional filters, search, date range, and pagination
@@ -43,4 +43,3 @@ router.put('/:id', updateProject);
 router.delete('/:id', deleteProject);
 
 module.exports = router;
-

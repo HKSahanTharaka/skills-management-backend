@@ -90,9 +90,9 @@ describe('Matching API Integration Tests', () => {
       const connection = await pool.getConnection();
       await connection.ping();
       connection.release();
-      console.log('✅ Test database connection established');
+      console.log('Test database connection established');
     } catch (error) {
-      console.error('❌ Test database connection failed:', error.message);
+      console.error('Test database connection failed:', error.message);
       throw error;
     }
   });
@@ -137,7 +137,7 @@ describe('Matching API Integration Tests', () => {
       );
     }
 
-    console.log('✅ Test data cleaned up');
+    console.log('Test data cleaned up');
     await pool.end();
   });
 
@@ -146,10 +146,11 @@ describe('Matching API Integration Tests', () => {
    */
   describe('POST /api/matching/find-personnel - Perfect Match (100%)', () => {
     test('should return 100% match when personnel has all required skills with sufficient proficiency', async () => {
-      // Create skills
-      const reactSkillId = await createSkill('React', 'Framework');
-      const nodeSkillId = await createSkill('Node.js', 'Framework');
-      const pythonSkillId = await createSkill('Python', 'Programming Language');
+      // Create skills with unique names to avoid duplicates
+      const timestamp = Date.now();
+      const reactSkillId = await createSkill(`React-${timestamp}`, 'Framework');
+      const nodeSkillId = await createSkill(`Node-${timestamp}`, 'Framework');
+      const pythonSkillId = await createSkill(`Python-${timestamp}`, 'Programming Language');
 
       // Create personnel with all skills
       const personnelId = await createPersonnel(

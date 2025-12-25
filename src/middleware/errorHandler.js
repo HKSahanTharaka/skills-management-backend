@@ -1,34 +1,34 @@
 /**
  * Error Handling Middleware
- * 
+ *
  * Centralized error handling for the application.
- * 
+ *
  * Features:
  * - Catches all errors from routes
  * - Formats error response consistently
  * - Logs errors for debugging
  * - Returns appropriate status codes
- * 
+ *
  * Error types handled:
  * - Validation errors (400)
  * - Not found errors (404)
  * - Unauthorized errors (401)
  * - Database errors (500)
  * - Duplicate entry errors (409)
- * 
+ *
  * Error Handler: Must be placed AFTER all routes to catch errors
  */
 
 /**
  * Global error handler middleware
  * Handles all errors thrown in route handlers
- * 
+ *
  * @param {Error} err - The error object
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next function
  */
-const errorHandler = (err, req, res, next) => {
+const errorHandler = (err, req, res) => {
   // Log error details for debugging
   const timestamp = new Date().toISOString();
   const errorLog = {
@@ -38,18 +38,20 @@ const errorHandler = (err, req, res, next) => {
     message: err.message,
     stack: err.stack,
     errorCode: err.code,
-    errorName: err.name
+    errorName: err.name,
   };
 
-  console.error('❌ Error occurred:', {
+  // eslint-disable-next-line no-console
+  console.error('Error occurred:', {
     timestamp,
     method: req.method,
     url: req.originalUrl,
-    message: err.message
+    message: err.message,
   });
-  
+
   // Log full error details in development
   if (process.env.NODE_ENV === 'development') {
+    // eslint-disable-next-line no-console
     console.error('Error details:', errorLog);
   }
 
@@ -77,10 +79,12 @@ const errorHandler = (err, req, res, next) => {
   // ============================================
   // UNAUTHORIZED ERRORS (401)
   // ============================================
-  else if (err.name === 'UnauthorizedError' || 
-           err.name === 'JsonWebTokenError' || 
-           err.name === 'TokenExpiredError' ||
-           err.name === 'NotBeforeError') {
+  else if (
+    err.name === 'UnauthorizedError' ||
+    err.name === 'JsonWebTokenError' ||
+    err.name === 'TokenExpiredError' ||
+    err.name === 'NotBeforeError'
+  ) {
     statusCode = 401;
     message = 'Unauthorized: Invalid or missing authentication token';
   }
@@ -90,7 +94,9 @@ const errorHandler = (err, req, res, next) => {
   // ============================================
   else if (err.name === 'ForbiddenError' || statusCode === 403) {
     statusCode = 403;
-    message = err.message || 'Forbidden: You do not have permission to access this resource';
+    message =
+      err.message ||
+      'Forbidden: You do not have permission to access this resource';
   }
 
   // ============================================
@@ -117,13 +123,13 @@ const errorHandler = (err, req, res, next) => {
   else if (err.code === 'ER_DUP_ENTRY') {
     statusCode = 409;
     message = 'Duplicate entry: This record already exists';
-    
+
     // Extract field name from MySQL error message if available
     const match = err.sqlMessage?.match(/for key '(.+?)'/);
     if (match) {
       errorDetails = {
         field: match[1],
-        message: 'This value already exists in the database'
+        message: 'This value already exists in the database',
       };
     }
   }
@@ -140,7 +146,7 @@ const errorHandler = (err, req, res, next) => {
     // MySQL/MariaDB error codes
     statusCode = 500;
     message = 'Database error occurred';
-    
+
     // Map specific database errors to user-friendly messages
     switch (err.code) {
       case 'ER_ACCESS_DENIED_ERROR':
@@ -156,7 +162,8 @@ const errorHandler = (err, req, res, next) => {
         message = 'Database connection was lost';
         break;
       case 'ECONNREFUSED':
-        message = 'Database connection refused. Check if database server is running.';
+        message =
+          'Database connection refused. Check if database server is running.';
         break;
       case 'ETIMEDOUT':
         message = 'Database connection timeout';
@@ -166,15 +173,17 @@ const errorHandler = (err, req, res, next) => {
         if (process.env.NODE_ENV === 'development') {
           errorDetails = {
             code: err.code,
-            sqlMessage: err.sqlMessage
+            sqlMessage: err.sqlMessage,
           };
         }
     }
   }
   // Handle connection pool errors
-  else if (err.code === 'PROTOCOL_CONNECTION_LOST' || 
-           err.code === 'ECONNREFUSED' || 
-           err.code === 'ETIMEDOUT') {
+  else if (
+    err.code === 'PROTOCOL_CONNECTION_LOST' ||
+    err.code === 'ECONNREFUSED' ||
+    err.code === 'ETIMEDOUT'
+  ) {
     statusCode = 500;
     message = 'Database connection error';
   }
@@ -209,7 +218,7 @@ const errorHandler = (err, req, res, next) => {
       errorDetails = {
         name: err.name,
         code: err.code,
-        message: err.message
+        message: err.message,
       };
     }
   }
@@ -220,8 +229,8 @@ const errorHandler = (err, req, res, next) => {
   const errorResponse = {
     success: false,
     error: {
-      message: message
-    }
+      message: message,
+    },
   };
 
   // Add error details if available
@@ -244,34 +253,34 @@ const errorHandler = (err, req, res, next) => {
 /**
  * 404 Not Found handler
  * Catches requests to routes that don't exist
- * 
+ *
  * This middleware should be placed after all routes but before the error handler
- * 
+ *
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next function
  */
-const notFoundHandler = (req, res, next) => {
+const notFoundHandler = (req, res) => {
   const timestamp = new Date().toISOString();
-  
+
   res.status(404).json({
     success: false,
     error: {
       message: `Route ${req.method} ${req.originalUrl} not found`,
-      timestamp
-    }
+      timestamp,
+    },
   });
 };
 
 /**
  * Async error wrapper
  * Wraps async route handlers to catch errors and pass them to error handler
- * 
+ *
  * Usage:
  * router.get('/route', asyncHandler(async (req, res, next) => {
  *   // async code here
  * }));
- * 
+ *
  * @param {Function} fn - Async function to wrap
  * @returns {Function} Wrapped function
  */
@@ -283,7 +292,7 @@ const asyncHandler = (fn) => {
 
 /**
  * Custom error class for application-specific errors
- * 
+ *
  * Usage:
  * throw new AppError('Resource not found', 404);
  */
@@ -301,5 +310,5 @@ module.exports = {
   errorHandler,
   notFoundHandler,
   asyncHandler,
-  AppError
+  AppError,
 };

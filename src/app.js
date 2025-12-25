@@ -1,8 +1,8 @@
 /**
  * Main Application File
- * 
+ *
  * This file sets up the Express application with all middleware and routes.
- * 
+ *
  * Middleware order matters:
  * 1. CORS (allows frontend to make requests)
  * 2. Body parsers (JSON, URL encoded)
@@ -38,12 +38,14 @@ const app = express();
  * Allows frontend to make requests from different origins
  * Must be placed FIRST to allow cross-origin requests
  */
-app.use(cors({
-  origin: process.env.FRONTEND_URL || '*', // Allow requests from frontend URL or all origins in development
-  credentials: true, // Allow cookies/credentials to be sent
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || '*', // Allow requests from frontend URL or all origins in development
+    credentials: true, // Allow cookies/credentials to be sent
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
 
 /**
  * 2. Body Parsers
@@ -52,15 +54,19 @@ app.use(cors({
  */
 
 // JSON body parser - parses JSON request bodies
-app.use(express.json({
-  limit: '10mb' // Limit JSON payload size
-}));
+app.use(
+  express.json({
+    limit: '10mb', // Limit JSON payload size
+  })
+);
 
 // URL-encoded body parser - parses form data
-app.use(express.urlencoded({
-  extended: true, // Use qs library for parsing (supports nested objects)
-  limit: '10mb' // Limit URL-encoded payload size
-}));
+app.use(
+  express.urlencoded({
+    extended: true, // Use qs library for parsing (supports nested objects)
+    limit: '10mb', // Limit URL-encoded payload size
+  })
+);
 
 // ============================================
 // ROUTE MOUNTING
@@ -77,7 +83,7 @@ app.get('/health', (req, res) => {
   res.json({
     success: true,
     message: 'Server is running',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -108,4 +114,3 @@ app.use(errorHandler);
 
 // Export the configured Express app
 module.exports = app;
-

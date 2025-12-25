@@ -1,10 +1,10 @@
 /**
  * Complex Queries Module
- * 
+ *
  * This module contains complex SQL queries for advanced operations
  * in the Skills Management System. These queries can be used directly
  * in controllers or services.
- * 
+ *
  * All queries use parameterized statements to prevent SQL injection.
  */
 
@@ -12,16 +12,19 @@ const { pool } = require('../config/database');
 
 /**
  * 1. Get Personnel with Availability for Project Dates
- * 
+ *
  * Retrieves all personnel with their availability percentage
  * for a specific project's date range. If no availability record exists,
  * defaults to 100% availability.
- * 
+ *
  * @param {string} projectStartDate - Project start date (YYYY-MM-DD)
  * @param {string} projectEndDate - Project end date (YYYY-MM-DD)
  * @returns {Promise<Array>} Array of personnel with availability data
  */
-const getPersonnelWithAvailabilityForProjectDates = async (projectStartDate, projectEndDate) => {
+const getPersonnelWithAvailabilityForProjectDates = async (
+  projectStartDate,
+  projectEndDate
+) => {
   const query = `
     SELECT 
       p.*,
@@ -45,23 +48,23 @@ const getPersonnelWithAvailabilityForProjectDates = async (projectStartDate, pro
     FROM personnel p
     ORDER BY p.name
   `;
-  
+
   const [results] = await pool.execute(query, [
     projectEndDate,
     projectStartDate,
     projectEndDate,
-    projectStartDate
+    projectStartDate,
   ]);
-  
+
   return results;
 };
 
 /**
  * 2. Get Personnel with Skill Matching Score for Project
- * 
+ *
  * Returns personnel with their skill matching score based on project requirements.
  * Calculates how many required skills each personnel has and their proficiency match status.
- * 
+ *
  * @param {number} projectId - Project ID
  * @returns {Promise<Array>} Array of personnel with matching scores
  */
@@ -95,17 +98,17 @@ const getPersonnelWithSkillMatchingScore = async (projectId) => {
     HAVING matching_skills_count > 0
     ORDER BY match_percentage DESC, p.experience_level DESC
   `;
-  
+
   const [results] = await pool.execute(query, [projectId]);
   return results;
 };
 
 /**
  * 3. Get Project Allocation Summary with Utilization
- * 
+ *
  * Shows all projects with their allocated personnel, total allocation percentages,
  * and utilization metrics.
- * 
+ *
  * @returns {Promise<Array>} Array of projects with allocation summaries
  */
 const getProjectAllocationSummary = async () => {
@@ -129,17 +132,17 @@ const getProjectAllocationSummary = async () => {
     GROUP BY proj.id, proj.project_name, proj.status, proj.start_date, proj.end_date
     ORDER BY proj.start_date DESC
   `;
-  
+
   const [results] = await pool.execute(query);
   return results;
 };
 
 /**
  * 4. Get Personnel Workload Analysis
- * 
+ *
  * Analyzes personnel workload by calculating total allocation percentages
  * across all active projects and checking for over-allocation (>100% total allocation).
- * 
+ *
  * @returns {Promise<Array>} Array of personnel with workload analysis
  */
 const getPersonnelWorkloadAnalysis = async () => {
@@ -169,17 +172,17 @@ const getPersonnelWorkloadAnalysis = async () => {
     GROUP BY p.id, p.name, p.email, p.role_title
     ORDER BY total_allocation_percentage DESC
   `;
-  
+
   const [results] = await pool.execute(query);
   return results;
 };
 
 /**
  * 5. Get Skill Gap Analysis for Project
- * 
+ *
  * Identifies which required skills are missing or have insufficient
  * proficiency among allocated personnel.
- * 
+ *
  * @param {number} projectId - Project ID
  * @returns {Promise<Array>} Array of skill gaps
  */
@@ -217,17 +220,17 @@ const getSkillGapAnalysis = async (projectId) => {
     GROUP BY prs.skill_id, s.skill_name, s.category, prs.minimum_proficiency
     ORDER BY personnel_meeting_requirement ASC, s.skill_name
   `;
-  
+
   const [results] = await pool.execute(query, [projectId]);
   return results;
 };
 
 /**
  * 6. Get Available Personnel for Date Range
- * 
+ *
  * Finds personnel who are available (not over-allocated) for a specific
  * date range, considering both availability records and existing project allocations.
- * 
+ *
  * @param {string} startDate - Start date (YYYY-MM-DD)
  * @param {string} endDate - End date (YYYY-MM-DD)
  * @returns {Promise<Array>} Array of available personnel
@@ -263,23 +266,27 @@ const getAvailablePersonnelForDateRange = async (startDate, endDate) => {
     HAVING remaining_capacity > 0
     ORDER BY remaining_capacity DESC, p.experience_level DESC
   `;
-  
+
   const [results] = await pool.execute(query, [
-    startDate, endDate, // for availability check
-    startDate, endDate, // for allocation overlap checks
-    startDate, endDate, // for allocation overlap checks
-    startDate, endDate  // for allocation overlap checks
+    startDate,
+    endDate, // for availability check
+    startDate,
+    endDate, // for allocation overlap checks
+    startDate,
+    endDate, // for allocation overlap checks
+    startDate,
+    endDate, // for allocation overlap checks
   ]);
-  
+
   return results;
 };
 
 /**
  * 7. Get Top Skilled Personnel by Category
- * 
+ *
  * Identifies the most skilled personnel in each skill category based on
  * proficiency levels and years of experience.
- * 
+ *
  * @param {string} category - Optional skill category filter
  * @returns {Promise<Array>} Array of top skilled personnel
  */
@@ -308,28 +315,28 @@ const getTopSkilledPersonnelByCategory = async (category = null) => {
     INNER JOIN personnel_skills ps ON ps.personnel_id = p.id
     INNER JOIN skills s ON s.id = ps.skill_id
   `;
-  
+
   const params = [];
   if (category) {
     query += ' WHERE s.category = ?';
     params.push(category);
   }
-  
+
   query += `
     GROUP BY s.category, p.id, p.name, p.role_title, p.experience_level
     ORDER BY s.category, proficiency_score DESC, skills_count DESC
   `;
-  
+
   const [results] = await pool.execute(query, params);
   return results;
 };
 
 /**
  * 8. Get Project Timeline with Allocations
- * 
+ *
  * Shows project timeline with all personnel allocations, including
  * overlap detection and resource conflicts.
- * 
+ *
  * @param {number} projectId - Optional project ID filter
  * @returns {Promise<Array>} Array of project timelines
  */
@@ -357,25 +364,25 @@ const getProjectTimelineWithAllocations = async (projectId = null) => {
     LEFT JOIN personnel p ON p.id = pa.personnel_id
     WHERE proj.status IN ('Planning', 'Active')
   `;
-  
+
   const params = [];
   if (projectId) {
     query += ' AND proj.id = ?';
     params.push(projectId);
   }
-  
+
   query += ' ORDER BY proj.start_date, pa.start_date';
-  
+
   const [results] = await pool.execute(query, params);
   return results;
 };
 
 /**
  * 9. Get Skill Demand vs Supply Analysis
- * 
+ *
  * Compares skill demand (from projects) vs supply (from personnel)
  * to identify skill shortages or surpluses.
- * 
+ *
  * @returns {Promise<Array>} Array of skill demand/supply analysis
  */
 const getSkillDemandVsSupply = async () => {
@@ -409,17 +416,17 @@ const getSkillDemandVsSupply = async () => {
     HAVING projects_requiring_skill > 0 OR personnel_with_skill > 0
     ORDER BY projects_requiring_skill DESC, personnel_with_skill ASC
   `;
-  
+
   const [results] = await pool.execute(query);
   return results;
 };
 
 /**
  * 10. Get Personnel Competency Matrix
- * 
+ *
  * Creates a comprehensive view of all personnel with their skills,
  * proficiency levels, and experience.
- * 
+ *
  * @param {number} personnelId - Optional personnel ID filter
  * @returns {Promise<Array>} Array of personnel competency data
  */
@@ -439,25 +446,25 @@ const getPersonnelCompetencyMatrix = async (personnelId = null) => {
     INNER JOIN personnel_skills ps ON ps.personnel_id = p.id
     INNER JOIN skills s ON s.id = ps.skill_id
   `;
-  
+
   const params = [];
   if (personnelId) {
     query += ' WHERE p.id = ?';
     params.push(personnelId);
   }
-  
+
   query += ' ORDER BY p.name, s.category, s.skill_name';
-  
+
   const [results] = await pool.execute(query, params);
   return results;
 };
 
 /**
  * 11. Get Project Readiness Score
- * 
+ *
  * Calculates a readiness score for projects based on whether all
  * required skills are covered by allocated personnel.
- * 
+ *
  * @param {number} projectId - Optional project ID filter
  * @returns {Promise<Array>} Array of projects with readiness scores
  */
@@ -517,28 +524,28 @@ const getProjectReadinessScore = async (projectId = null) => {
     LEFT JOIN personnel_skills ps ON ps.personnel_id = pa.personnel_id 
       AND ps.skill_id = prs.skill_id
   `;
-  
+
   const params = [];
   if (projectId) {
     query += ' WHERE proj.id = ?';
     params.push(projectId);
   }
-  
+
   query += `
     GROUP BY proj.id, proj.project_name, proj.status
     ORDER BY readiness_percentage DESC
   `;
-  
+
   const [results] = await pool.execute(query, params);
   return results;
 };
 
 /**
  * 12. Get Personnel Utilization Trend
- * 
+ *
  * Shows personnel utilization over time by month, useful for
  * capacity planning and resource management.
- * 
+ *
  * @param {number} months - Number of months to look back (default: 12)
  * @returns {Promise<Array>} Array of utilization trends
  */
@@ -562,7 +569,7 @@ const getPersonnelUtilizationTrend = async (months = 12) => {
     GROUP BY DATE_FORMAT(pa.start_date, '%Y-%m'), p.id, p.name
     ORDER BY month DESC, total_allocation DESC
   `;
-  
+
   const [results] = await pool.execute(query, [months]);
   return results;
 };
@@ -579,6 +586,5 @@ module.exports = {
   getSkillDemandVsSupply,
   getPersonnelCompetencyMatrix,
   getProjectReadinessScore,
-  getPersonnelUtilizationTrend
+  getPersonnelUtilizationTrend,
 };
-

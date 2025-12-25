@@ -1,6 +1,6 @@
 /**
  * Skill Controller
- * 
+ *
  * This controller handles all CRUD operations for skills management.
  * Includes validation, database operations, and error handling.
  */
@@ -9,12 +9,12 @@ const { pool } = require('../config/database');
 
 /**
  * Create Skill
- * 
+ *
  * Steps:
  * 1. Validate skill_name uniqueness
  * 2. Validate category is valid enum value
  * 3. Insert into database
- * 
+ *
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next function
@@ -28,19 +28,26 @@ const createSkill = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Missing required fields: skill_name and category are required'
-        }
+          message:
+            'Missing required fields: skill_name and category are required',
+        },
       });
     }
 
     // Validate category is valid enum value
-    const validCategories = ['Programming Language', 'Framework', 'Tool', 'Soft Skill', 'Other'];
+    const validCategories = [
+      'Programming Language',
+      'Framework',
+      'Tool',
+      'Soft Skill',
+      'Other',
+    ];
     if (!validCategories.includes(category)) {
       return res.status(400).json({
         success: false,
         error: {
-          message: `Invalid category. Must be one of: ${validCategories.join(', ')}`
-        }
+          message: `Invalid category. Must be one of: ${validCategories.join(', ')}`,
+        },
       });
     }
 
@@ -54,8 +61,8 @@ const createSkill = async (req, res, next) => {
       return res.status(409).json({
         success: false,
         error: {
-          message: 'Skill name already exists'
-        }
+          message: 'Skill name already exists',
+        },
       });
     }
 
@@ -74,7 +81,7 @@ const createSkill = async (req, res, next) => {
     res.status(201).json({
       success: true,
       message: 'Skill created successfully',
-      data: createdSkill[0]
+      data: createdSkill[0],
     });
   } catch (error) {
     // Handle duplicate skill_name error from database
@@ -82,8 +89,8 @@ const createSkill = async (req, res, next) => {
       return res.status(409).json({
         success: false,
         error: {
-          message: 'Skill name already exists'
-        }
+          message: 'Skill name already exists',
+        },
       });
     }
     next(error);
@@ -92,12 +99,12 @@ const createSkill = async (req, res, next) => {
 
 /**
  * Get All Skills
- * 
+ *
  * Supports:
  * - Filtering by category
  * - Search by skill name
  * - Pagination (optional)
- * 
+ *
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next function
@@ -155,8 +162,8 @@ const getAllSkills = async (req, res, next) => {
           page: parseInt(page),
           limit: parseInt(limit),
           total: total,
-          totalPages: totalPages
-        }
+          totalPages: totalPages,
+        },
       });
     } else {
       // Add ordering and return all skills without pagination
@@ -165,7 +172,7 @@ const getAllSkills = async (req, res, next) => {
 
       res.status(200).json({
         success: true,
-        data: skills
+        data: skills,
       });
     }
   } catch (error) {
@@ -175,9 +182,9 @@ const getAllSkills = async (req, res, next) => {
 
 /**
  * Get Single Skill
- * 
+ *
  * Get a skill by ID
- * 
+ *
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next function
@@ -187,24 +194,23 @@ const getSkillById = async (req, res, next) => {
     const { id } = req.params;
 
     // Query database for skill
-    const [skills] = await pool.execute(
-      'SELECT * FROM skills WHERE id = ?',
-      [id]
-    );
+    const [skills] = await pool.execute('SELECT * FROM skills WHERE id = ?', [
+      id,
+    ]);
 
     // Return 404 if not found
     if (skills.length === 0) {
       return res.status(404).json({
         success: false,
         error: {
-          message: 'Skill not found'
-        }
+          message: 'Skill not found',
+        },
       });
     }
 
     res.status(200).json({
       success: true,
-      data: skills[0]
+      data: skills[0],
     });
   } catch (error) {
     next(error);
@@ -213,13 +219,13 @@ const getSkillById = async (req, res, next) => {
 
 /**
  * Update Skill
- * 
+ *
  * Steps:
  * 1. Check skill exists
  * 2. Validate skill_name uniqueness if changed
  * 3. Validate category if changed
  * 4. Update fields
- * 
+ *
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next function
@@ -239,8 +245,8 @@ const updateSkill = async (req, res, next) => {
       return res.status(404).json({
         success: false,
         error: {
-          message: 'Skill not found'
-        }
+          message: 'Skill not found',
+        },
       });
     }
 
@@ -257,21 +263,27 @@ const updateSkill = async (req, res, next) => {
         return res.status(409).json({
           success: false,
           error: {
-            message: 'Skill name already exists'
-          }
+            message: 'Skill name already exists',
+          },
         });
       }
     }
 
     // Validate category if provided
     if (category) {
-      const validCategories = ['Programming Language', 'Framework', 'Tool', 'Soft Skill', 'Other'];
+      const validCategories = [
+        'Programming Language',
+        'Framework',
+        'Tool',
+        'Soft Skill',
+        'Other',
+      ];
       if (!validCategories.includes(category)) {
         return res.status(400).json({
           success: false,
           error: {
-            message: `Invalid category. Must be one of: ${validCategories.join(', ')}`
-          }
+            message: `Invalid category. Must be one of: ${validCategories.join(', ')}`,
+          },
         });
       }
     }
@@ -298,8 +310,8 @@ const updateSkill = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'No fields provided to update'
-        }
+          message: 'No fields provided to update',
+        },
       });
     }
 
@@ -321,7 +333,7 @@ const updateSkill = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: 'Skill updated successfully',
-      data: updatedSkills[0]
+      data: updatedSkills[0],
     });
   } catch (error) {
     // Handle duplicate skill_name error from database
@@ -329,8 +341,8 @@ const updateSkill = async (req, res, next) => {
       return res.status(409).json({
         success: false,
         error: {
-          message: 'Skill name already exists'
-        }
+          message: 'Skill name already exists',
+        },
       });
     }
     next(error);
@@ -339,13 +351,13 @@ const updateSkill = async (req, res, next) => {
 
 /**
  * Delete Skill
- * 
+ *
  * Steps:
  * 1. Check if skill exists
  * 2. Check if skill is used by any personnel
  * 3. If used, prevent deletion
  * 4. If not used, delete skill
- * 
+ *
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next function
@@ -364,8 +376,8 @@ const deleteSkill = async (req, res, next) => {
       return res.status(404).json({
         success: false,
         error: {
-          message: 'Skill not found'
-        }
+          message: 'Skill not found',
+        },
       });
     }
 
@@ -381,20 +393,17 @@ const deleteSkill = async (req, res, next) => {
       return res.status(409).json({
         success: false,
         error: {
-          message: `Cannot delete skill: It is currently assigned to ${usageCount} personnel. Please remove the skill from all personnel before deleting.`
-        }
+          message: `Cannot delete skill: It is currently assigned to ${usageCount} personnel. Please remove the skill from all personnel before deleting.`,
+        },
       });
     }
 
     // Delete skill if not used
-    await pool.execute(
-      'DELETE FROM skills WHERE id = ?',
-      [id]
-    );
+    await pool.execute('DELETE FROM skills WHERE id = ?', [id]);
 
     res.status(200).json({
       success: true,
-      message: 'Skill deleted successfully'
+      message: 'Skill deleted successfully',
     });
   } catch (error) {
     next(error);
@@ -406,5 +415,5 @@ module.exports = {
   getAllSkills,
   getSkillById,
   updateSkill,
-  deleteSkill
+  deleteSkill,
 };

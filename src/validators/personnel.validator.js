@@ -1,6 +1,6 @@
 /**
  * Personnel Validation Middleware
- * 
+ *
  * Uses express-validator to validate personnel data before processing.
  * Validates:
  * - name: must not be empty, max 255 characters
@@ -36,10 +36,7 @@ const validateCreatePersonnel = [
     .normalizeEmail(),
 
   // Validate role_title: must not be empty
-  body('role_title')
-    .trim()
-    .notEmpty()
-    .withMessage('Role title is required'),
+  body('role_title').trim().notEmpty().withMessage('Role title is required'),
 
   // Validate experience_level: must be one of [Junior, Mid-Level, Senior]
   body('experience_level')
@@ -56,10 +53,7 @@ const validateCreatePersonnel = [
     .isLength({ max: 500 })
     .withMessage('Profile image URL must not exceed 500 characters'),
 
-  body('bio')
-    .optional()
-    .isString()
-    .withMessage('Bio must be a string'),
+  body('bio').optional().isString().withMessage('Bio must be a string'),
 
   body('user_id')
     .optional()
@@ -74,12 +68,12 @@ const validateCreatePersonnel = [
         success: false,
         error: {
           message: 'Validation failed',
-          details: errors.array()
-        }
+          details: errors.array(),
+        },
       });
     }
     next();
-  }
+  },
 ];
 
 /**
@@ -131,10 +125,7 @@ const validateUpdatePersonnel = [
     .isLength({ max: 500 })
     .withMessage('Profile image URL must not exceed 500 characters'),
 
-  body('bio')
-    .optional()
-    .isString()
-    .withMessage('Bio must be a string'),
+  body('bio').optional().isString().withMessage('Bio must be a string'),
 
   body('user_id')
     .optional()
@@ -149,15 +140,15 @@ const validateUpdatePersonnel = [
         success: false,
         error: {
           message: 'Validation failed',
-          details: errors.array()
-        }
+          details: errors.array(),
+        },
       });
     }
     next();
-  }
+  },
 ];
 
 module.exports = {
   validateCreatePersonnel,
-  validateUpdatePersonnel
+  validateUpdatePersonnel,
 };

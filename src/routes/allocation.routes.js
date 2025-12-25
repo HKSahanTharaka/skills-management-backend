@@ -1,6 +1,6 @@
 /**
  * Allocation Routes
- * 
+ *
  * These routes handle project allocation tracking.
  */
 
@@ -12,7 +12,7 @@ const {
   getProjectTeam,
   updateProjectAllocation,
   deleteProjectAllocation,
-  getPersonnelAllocations
+  getPersonnelAllocations,
 } = require('../controllers/allocation.controller');
 
 // GET /api/allocations/personnel/:id/utilization - Get personnel utilization (must come before /personnel/:id)
@@ -34,4 +34,3 @@ router.put('/:id', updateProjectAllocation);
 router.delete('/:id', deleteProjectAllocation);
 
 module.exports = router;
-

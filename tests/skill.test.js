@@ -1,5 +1,13 @@
-// Skill tests
+/**
+ * Skill API Integration Tests
+ * 
+ * Note: Comprehensive skill tests are in tests/integration/skill.api.test.js
+ * This file is kept for backward compatibility.
+ */
+
 describe('Skill', () => {
-  // Tests will be added here
+  test('placeholder - comprehensive tests in tests/integration/skill.api.test.js', () => {
+    expect(true).toBe(true);
+  });
 });
 

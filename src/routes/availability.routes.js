@@ -1,6 +1,6 @@
 /**
  * Availability Routes
- * 
+ *
  * These routes handle personnel availability tracking.
  */
 
@@ -10,7 +10,7 @@ const {
   setPersonnelAvailability,
   getPersonnelAvailability,
   updatePersonnelAvailability,
-  deletePersonnelAvailability
+  deletePersonnelAvailability,
 } = require('../controllers/availability.controller');
 
 // GET /api/availability/:personnelId - Get availability periods for a personnel
@@ -26,4 +26,3 @@ router.put('/:id', updatePersonnelAvailability);
 router.delete('/:id', deletePersonnelAvailability);
 
 module.exports = router;
-

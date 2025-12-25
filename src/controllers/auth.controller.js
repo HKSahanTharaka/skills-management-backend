@@ -1,8 +1,8 @@
 /**
  * Authentication Controller
- * 
+ *
  * This controller handles user registration and login using JWT authentication.
- * 
+ *
  * Understanding JWT Authentication:
  * - User sends email/password
  * - Backend verifies credentials
@@ -17,20 +17,20 @@ const { pool } = require('../config/database');
 
 /**
  * Register Function
- * 
+ *
  * Steps:
  * 1. Validate email format
  * 2. Check if email already exists
  * 3. Hash password using bcrypt (never store plain passwords!)
  * 4. Insert user into database
  * 5. Return success message
- * 
+ *
  * Password Hashing Explained:
  * Plain password: "mypassword123"
  * ↓ (bcrypt hashing)
  * Hashed: "$2a$10$N9qo8uLOickgx2ZMRZoMye.IjfO4ZjJZjZ..."
  * Even if someone steals your database, they can't read passwords!
- * 
+ *
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next function
@@ -44,8 +44,8 @@ const register = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Email and password are required'
-        }
+          message: 'Email and password are required',
+        },
       });
     }
 
@@ -55,8 +55,8 @@ const register = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Invalid email format'
-        }
+          message: 'Invalid email format',
+        },
       });
     }
 
@@ -65,8 +65,8 @@ const register = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Password must be at least 6 characters long'
-        }
+          message: 'Password must be at least 6 characters long',
+        },
       });
     }
 
@@ -76,8 +76,8 @@ const register = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Invalid role. Must be one of: admin, manager, user'
-        }
+          message: 'Invalid role. Must be one of: admin, manager, user',
+        },
       });
     }
 
@@ -91,8 +91,8 @@ const register = async (req, res, next) => {
       return res.status(409).json({
         success: false,
         error: {
-          message: 'Email already exists'
-        }
+          message: 'Email already exists',
+        },
       });
     }
 
@@ -115,8 +115,8 @@ const register = async (req, res, next) => {
       user: {
         id: result.insertId,
         email: email,
-        role: role
-      }
+        role: role,
+      },
     });
   } catch (error) {
     // Pass error to error handling middleware
@@ -126,13 +126,13 @@ const register = async (req, res, next) => {
 
 /**
  * Login Function
- * 
+ *
  * Steps:
  * 1. Find user by email
  * 2. Compare provided password with hashed password
  * 3. Generate JWT token if password matches
  * 4. Return token and user info
- * 
+ *
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next function
@@ -146,8 +146,8 @@ const login = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Email and password are required'
-        }
+          message: 'Email and password are required',
+        },
       });
     }
 
@@ -162,8 +162,8 @@ const login = async (req, res, next) => {
       return res.status(401).json({
         success: false,
         error: {
-          message: 'Invalid email or password'
-        }
+          message: 'Invalid email or password',
+        },
       });
     }
 
@@ -177,23 +177,24 @@ const login = async (req, res, next) => {
       return res.status(401).json({
         success: false,
         error: {
-          message: 'Invalid email or password'
-        }
+          message: 'Invalid email or password',
+        },
       });
     }
 
     // Generate JWT token if password matches
     // JWT token contains user info (payload) and is signed with a secret key
-    const jwtSecret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+    const jwtSecret =
+      process.env.JWT_SECRET || 'your-secret-key-change-in-production';
     const token = jwt.sign(
       {
         id: user.id,
         email: user.email,
-        role: user.role
+        role: user.role,
       },
       jwtSecret,
       {
-        expiresIn: process.env.JWT_EXPIRES_IN || '7d' // Token expires in 7 days
+        expiresIn: process.env.JWT_EXPIRES_IN || '7d', // Token expires in 7 days
       }
     );
 
@@ -205,8 +206,8 @@ const login = async (req, res, next) => {
       user: {
         id: user.id,
         email: user.email,
-        role: user.role
-      }
+        role: user.role,
+      },
     });
   } catch (error) {
     // Pass error to error handling middleware
@@ -216,6 +217,5 @@ const login = async (req, res, next) => {
 
 module.exports = {
   register,
-  login
+  login,
 };
-

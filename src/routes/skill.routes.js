@@ -1,6 +1,6 @@
 /**
  * Skill Routes
- * 
+ *
  * These routes handle all CRUD operations for skills management.
  */
 
@@ -11,7 +11,7 @@ const {
   getAllSkills,
   getSkillById,
   updateSkill,
-  deleteSkill
+  deleteSkill,
 } = require('../controllers/skill.controller');
 
 // GET /api/skills - Get all skills with optional filters, search, and pagination
@@ -30,4 +30,3 @@ router.put('/:id', updateSkill);
 router.delete('/:id', deleteSkill);
 
 module.exports = router;
-

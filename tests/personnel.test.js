@@ -28,9 +28,9 @@ describe('Personnel API Tests', () => {
       const connection = await pool.getConnection();
       await connection.ping();
       connection.release();
-      console.log('✅ Test database connection established');
+      console.log('Test database connection established');
     } catch (error) {
-      console.error('❌ Test database connection failed:', error.message);
+      console.error('Test database connection failed:', error.message);
       throw error;
     }
   });
@@ -47,9 +47,9 @@ describe('Personnel API Tests', () => {
           `DELETE FROM personnel WHERE id IN (${createdPersonnelIds.map(() => '?').join(',')})`,
           createdPersonnelIds
         );
-        console.log('✅ Test data cleaned up');
+        console.log('Test data cleaned up');
       } catch (error) {
-        console.error('⚠️  Error cleaning up test data:', error.message);
+        console.error('Error cleaning up test data:', error.message);
       }
     }
     
@@ -228,7 +228,15 @@ describe('Personnel API Tests', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error.message).toContain('Experience level must be one of');
+      // Validator returns "Validation failed" with details array
+      expect(response.body.error.message).toBe('Validation failed');
+      expect(response.body.error.details).toBeDefined();
+      expect(Array.isArray(response.body.error.details)).toBe(true);
+      // Check if details contains the experience level error
+      const experienceError = response.body.error.details.find(
+        detail => detail.msg && detail.msg.includes('Experience level must be one of')
+      );
+      expect(experienceError).toBeDefined();
     });
 
     test('should return 400 when name exceeds 255 characters', async () => {

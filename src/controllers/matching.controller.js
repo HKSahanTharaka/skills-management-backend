@@ -1,6 +1,6 @@
 /**
  * Matching Controller
- * 
+ *
  * This controller handles personnel matching algorithms for projects.
  * Matches personnel based on required skills, proficiency levels, and availability.
  */
@@ -12,10 +12,10 @@ const { pool } = require('../config/database');
  * Used to compare proficiency levels numerically
  */
 const PROFICIENCY_LEVELS = {
-  'Beginner': 1,
-  'Intermediate': 2,
-  'Advanced': 3,
-  'Expert': 4
+  Beginner: 1,
+  Intermediate: 2,
+  Advanced: 3,
+  Expert: 4,
 };
 
 /**
@@ -23,14 +23,14 @@ const PROFICIENCY_LEVELS = {
  * Used for sorting (higher is better)
  */
 const EXPERIENCE_PRIORITY = {
-  'Junior': 1,
+  Junior: 1,
   'Mid-Level': 2,
-  'Senior': 3
+  Senior: 3,
 };
 
 /**
  * Find Matching Personnel for Project
- * 
+ *
  * Matching Logic:
  * 1. Get project requirements (required skills with minimum proficiency)
  * 2. For each personnel:
@@ -40,7 +40,7 @@ const EXPERIENCE_PRIORITY = {
  * 3. Calculate match score: (matching skills / total required) × 100
  * 4. Get availability for project date range
  * 5. Sort by: match score (desc), experience level (desc), availability (desc)
- * 
+ *
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next function
@@ -54,8 +54,8 @@ const findMatchingPersonnel = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'project_id is required'
-        }
+          message: 'project_id is required',
+        },
       });
     }
 
@@ -69,8 +69,8 @@ const findMatchingPersonnel = async (req, res, next) => {
       return res.status(404).json({
         success: false,
         error: {
-          message: 'Project not found'
-        }
+          message: 'Project not found',
+        },
       });
     }
 
@@ -93,8 +93,8 @@ const findMatchingPersonnel = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Project has no required skills defined'
-        }
+          message: 'Project has no required skills defined',
+        },
       });
     }
 
@@ -110,8 +110,8 @@ const findMatchingPersonnel = async (req, res, next) => {
     const [allPersonnel] = await pool.execute(personnelQuery, personnelParams);
 
     // Get personnel skills in batch
-    const personnelIds = allPersonnel.map(p => p.id);
-    
+    const personnelIds = allPersonnel.map((p) => p.id);
+
     let personnelSkillsMap = {};
     if (personnelIds.length > 0) {
       const placeholders = personnelIds.map(() => '?').join(',');
@@ -128,14 +128,14 @@ const findMatchingPersonnel = async (req, res, next) => {
       );
 
       // Group skills by personnel_id
-      personnelSkills.forEach(skill => {
+      personnelSkills.forEach((skill) => {
         if (!personnelSkillsMap[skill.personnel_id]) {
           personnelSkillsMap[skill.personnel_id] = [];
         }
         personnelSkillsMap[skill.personnel_id].push({
           skill_id: skill.skill_id,
           skill_name: skill.skill_name,
-          proficiency_level: skill.proficiency_level
+          proficiency_level: skill.proficiency_level,
         });
       });
     }
@@ -157,8 +157,10 @@ const findMatchingPersonnel = async (req, res, next) => {
         [...personnelIds, project.end_date, project.start_date]
       );
 
-      availabilityData.forEach(avail => {
-        availabilityMap[avail.personnel_id] = Math.round(avail.avg_availability || 0);
+      availabilityData.forEach((avail) => {
+        availabilityMap[avail.personnel_id] = Math.round(
+          avail.avg_availability || 0
+        );
       });
     }
 
@@ -167,10 +169,10 @@ const findMatchingPersonnel = async (req, res, next) => {
 
     for (const personnel of allPersonnel) {
       const personnelSkills = personnelSkillsMap[personnel.id] || [];
-      
+
       // Create a map of personnel skills by skill_id for quick lookup
       const personnelSkillsMapById = {};
-      personnelSkills.forEach(skill => {
+      personnelSkills.forEach((skill) => {
         personnelSkillsMapById[skill.skill_id] = skill;
       });
 
@@ -180,25 +182,27 @@ const findMatchingPersonnel = async (req, res, next) => {
 
       for (const requiredSkill of requiredSkills) {
         const personnelSkill = personnelSkillsMapById[requiredSkill.skill_id];
-        
+
         if (personnelSkill) {
-          const requiredLevel = PROFICIENCY_LEVELS[requiredSkill.minimum_proficiency];
-          const personnelLevel = PROFICIENCY_LEVELS[personnelSkill.proficiency_level];
-          
+          const requiredLevel =
+            PROFICIENCY_LEVELS[requiredSkill.minimum_proficiency];
+          const personnelLevel =
+            PROFICIENCY_LEVELS[personnelSkill.proficiency_level];
+
           if (personnelLevel >= requiredLevel) {
             matchCount++;
             matchingSkills.push({
               skillName: requiredSkill.skill_name,
               required: requiredSkill.minimum_proficiency,
               actual: personnelSkill.proficiency_level,
-              meets: true
+              meets: true,
             });
           } else {
             matchingSkills.push({
               skillName: requiredSkill.skill_name,
               required: requiredSkill.minimum_proficiency,
               actual: personnelSkill.proficiency_level,
-              meets: false
+              meets: false,
             });
           }
         } else {
@@ -206,7 +210,7 @@ const findMatchingPersonnel = async (req, res, next) => {
             skillName: requiredSkill.skill_name,
             required: requiredSkill.minimum_proficiency,
             actual: null,
-            meets: false
+            meets: false,
           });
         }
       }
@@ -233,7 +237,7 @@ const findMatchingPersonnel = async (req, res, next) => {
           experienceLevel: personnel.experience_level,
           matchScore: matchScore,
           matchingSkills: matchingSkills,
-          availability: availability
+          availability: availability,
         });
       }
     }
@@ -244,23 +248,23 @@ const findMatchingPersonnel = async (req, res, next) => {
       if (b.matchScore !== a.matchScore) {
         return b.matchScore - a.matchScore;
       }
-      
+
       // Secondary: Experience level (descending - Senior > Mid-Level > Junior)
       const expA = EXPERIENCE_PRIORITY[a.experienceLevel] || 0;
       const expB = EXPERIENCE_PRIORITY[b.experienceLevel] || 0;
       if (expB !== expA) {
         return expB - expA;
       }
-      
+
       // Tertiary: Availability (descending)
       return b.availability - a.availability;
     });
 
     // Format required skills for response
-    const formattedRequiredSkills = requiredSkills.map(rs => ({
+    const formattedRequiredSkills = requiredSkills.map((rs) => ({
       skillId: rs.skill_id,
       skillName: rs.skill_name,
-      minimumProficiency: rs.minimum_proficiency
+      minimumProficiency: rs.minimum_proficiency,
     }));
 
     res.status(200).json({
@@ -268,7 +272,7 @@ const findMatchingPersonnel = async (req, res, next) => {
       projectId: parseInt(project_id),
       projectName: project.project_name,
       requiredSkills: formattedRequiredSkills,
-      matchedPersonnel: matchedPersonnel
+      matchedPersonnel: matchedPersonnel,
     });
   } catch (error) {
     next(error);
@@ -276,5 +280,5 @@ const findMatchingPersonnel = async (req, res, next) => {
 };
 
 module.exports = {
-  findMatchingPersonnel
+  findMatchingPersonnel,
 };
