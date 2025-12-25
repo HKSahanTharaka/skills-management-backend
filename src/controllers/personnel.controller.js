@@ -159,9 +159,9 @@ const getAllPersonnel = async (req, res, next) => {
     const total = countResult[0].total;
 
     // Add pagination
-    const offset = (parseInt(page) - 1) * parseInt(limit);
-    query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
-    params.push(parseInt(limit), offset);
+    const limitValue = parseInt(limit);
+    const offsetValue = (parseInt(page) - 1) * limitValue;
+    query += ` ORDER BY created_at DESC LIMIT ${limitValue} OFFSET ${offsetValue}`;
 
     // Execute query
     const [personnel] = await pool.execute(query, params);

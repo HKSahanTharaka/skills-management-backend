@@ -20,6 +20,8 @@ const personnelRoutes = require('./routes/personnel.routes');
 const skillRoutes = require('./routes/skill.routes');
 const projectRoutes = require('./routes/project.routes');
 const matchingRoutes = require('./routes/matching.routes');
+const availabilityRoutes = require('./routes/availability.routes');
+const allocationRoutes = require('./routes/allocation.routes');
 
 // Import error handling middleware
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
@@ -85,6 +87,8 @@ app.use('/api/personnel', personnelRoutes);
 app.use('/api/skills', skillRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/matching', matchingRoutes);
+app.use('/api/availability', availabilityRoutes);
+app.use('/api/allocations', allocationRoutes);
 
 // ============================================
 // ERROR HANDLING MIDDLEWARE

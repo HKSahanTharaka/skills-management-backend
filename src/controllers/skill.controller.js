@@ -138,9 +138,9 @@ const getAllSkills = async (req, res, next) => {
 
       // Add ordering and pagination to main query
       query += ' ORDER BY skill_name ASC';
-      const offset = (parseInt(page) - 1) * parseInt(limit);
-      query += ' LIMIT ? OFFSET ?';
-      params.push(parseInt(limit), offset);
+      const limitValue = parseInt(limit);
+      const offsetValue = (parseInt(page) - 1) * limitValue;
+      query += ` LIMIT ${limitValue} OFFSET ${offsetValue}`;
 
       // Execute query
       const [skills] = await pool.execute(query, params);
