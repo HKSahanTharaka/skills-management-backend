@@ -152,7 +152,74 @@ const requireRole = (role) => {
   };
 };
 
+/**
+ * Middleware to check if user has any of the specified roles
+ *
+ * Usage: router.get('/api', authenticateToken, requireAnyRole(['admin', 'manager']), controllerFunction)
+ *
+ * @param {Array} roles - Array of allowed roles
+ * @returns {Function} Middleware function
+ */
+const requireAnyRole = (roles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: {
+          message: 'Authentication required',
+        },
+      });
+    }
+
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        error: {
+          message: `Access denied. Required role: ${roles.join(' or ')}.`,
+        },
+      });
+    }
+
+    next();
+  };
+};
+
+/**
+ * Check if current user is admin
+ * @param {Object} user - User object from req.user
+ * @returns {boolean}
+ */
+const isAdmin = (user) => {
+  return user && user.role === 'admin';
+};
+
+/**
+ * Check if current user is manager or admin
+ * @param {Object} user - User object from req.user
+ * @returns {boolean}
+ */
+const isManagerOrAdmin = (user) => {
+  return user && (user.role === 'admin' || user.role === 'manager');
+};
+
+/**
+ * Check if current user can modify resource
+ * Users can modify their own resources, managers and admins can modify all
+ * @param {Object} user - User object from req.user
+ * @param {number} resourceOwnerId - ID of resource owner
+ * @returns {boolean}
+ */
+const canModifyResource = (user, resourceOwnerId) => {
+  if (!user) return false;
+  if (user.role === 'admin' || user.role === 'manager') return true;
+  return user.id === resourceOwnerId;
+};
+
 module.exports = {
   authenticateToken,
   requireRole,
+  requireAnyRole,
+  isAdmin,
+  isManagerOrAdmin,
+  canModifyResource,
 };

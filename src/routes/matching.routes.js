@@ -7,8 +7,10 @@
 const express = require('express');
 const router = express.Router();
 const { findMatchingPersonnel } = require('../controllers/matching.controller');
+const { authenticateToken, requireAnyRole } = require('../middleware/auth');
 
-// POST /api/matching/find-personnel - Find personnel matching project requirements
-router.post('/find-personnel', findMatchingPersonnel);
+// GET /api/matching/project/:id - Find personnel matching project requirements
+// Admin & Manager only - Users cannot use matching system
+router.get('/project/:id', authenticateToken, requireAnyRole(['admin', 'manager']), findMatchingPersonnel);
 
 module.exports = router;

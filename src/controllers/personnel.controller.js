@@ -6,6 +6,7 @@
  */
 
 const { pool } = require('../config/database');
+const { canAccessPersonnel } = require('../utils/controllerHelpers');
 
 /**
  * Create Personnel
@@ -225,6 +226,18 @@ const getAllPersonnel = async (req, res, next) => {
 const getPersonnelById = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const currentUser = req.user;
+
+    // Check if user has permission to view this personnel
+    const hasAccess = await canAccessPersonnel(currentUser, id);
+    if (!hasAccess) {
+      return res.status(403).json({
+        success: false,
+        error: {
+          message: 'Access denied. You can only view your own profile.',
+        },
+      });
+    }
 
     // Query database for personnel
     const [personnel] = await pool.execute(
@@ -290,6 +303,7 @@ const getPersonnelById = async (req, res, next) => {
 const updatePersonnel = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const currentUser = req.user;
     const {
       name,
       email,
@@ -299,6 +313,17 @@ const updatePersonnel = async (req, res, next) => {
       bio,
       user_id,
     } = req.body;
+
+    // Check if user has permission to update this personnel
+    const hasAccess = await canAccessPersonnel(currentUser, id);
+    if (!hasAccess) {
+      return res.status(403).json({
+        success: false,
+        error: {
+          message: 'Access denied. You can only update your own profile.',
+        },
+      });
+    }
 
     // Validate ID exists
     const [existingPersonnel] = await pool.execute(
