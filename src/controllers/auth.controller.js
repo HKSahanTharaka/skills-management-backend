@@ -184,8 +184,17 @@ const login = async (req, res, next) => {
 
     // Generate JWT token if password matches
     // JWT token contains user info (payload) and is signed with a secret key
-    const jwtSecret =
-      process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+    const jwtSecret = process.env.JWT_SECRET;
+    
+    if (!jwtSecret) {
+      console.error('JWT_SECRET is not configured in environment variables');
+      return res.status(500).json({
+        success: false,
+        error: 'Server configuration error',
+        message: 'Authentication service is not properly configured'
+      });
+    }
+    
     const token = jwt.sign(
       {
         id: user.id,

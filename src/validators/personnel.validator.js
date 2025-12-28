@@ -47,16 +47,16 @@ const validateCreatePersonnel = [
 
   // Optional fields validation
   body('profile_image_url')
-    .optional()
+    .optional({ checkFalsy: true })
     .isURL()
     .withMessage('Profile image URL must be a valid URL')
     .isLength({ max: 500 })
     .withMessage('Profile image URL must not exceed 500 characters'),
 
-  body('bio').optional().isString().withMessage('Bio must be a string'),
+  body('bio').optional({ checkFalsy: true }).isString().withMessage('Bio must be a string'),
 
   body('user_id')
-    .optional()
+    .optional({ checkFalsy: true })
     .isInt({ min: 1 })
     .withMessage('User ID must be a positive integer'),
 
@@ -119,16 +119,16 @@ const validateUpdatePersonnel = [
 
   // Optional fields validation
   body('profile_image_url')
-    .optional()
+    .optional({ checkFalsy: true })
     .isURL()
     .withMessage('Profile image URL must be a valid URL')
     .isLength({ max: 500 })
     .withMessage('Profile image URL must not exceed 500 characters'),
 
-  body('bio').optional().isString().withMessage('Bio must be a string'),
+  body('bio').optional({ checkFalsy: true }).isString().withMessage('Bio must be a string'),
 
   body('user_id')
-    .optional()
+    .optional({ checkFalsy: true })
     .isInt({ min: 1 })
     .withMessage('User ID must be a positive integer'),
 

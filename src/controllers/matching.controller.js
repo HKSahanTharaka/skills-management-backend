@@ -47,7 +47,8 @@ const EXPERIENCE_PRIORITY = {
  */
 const findMatchingPersonnel = async (req, res, next) => {
   try {
-    const { project_id, additional_filters } = req.body;
+    const project_id = req.params.id;
+    const { additional_filters } = req.query;
 
     // Validate project_id
     if (!project_id) {

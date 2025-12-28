@@ -14,7 +14,7 @@ jobs:
       mysql:
         image: mysql:8.0
         env:
-          MYSQL_ROOT_PASSWORD: rootpassword
+          MYSQL_ROOT_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
           MYSQL_DATABASE: skills_management
         ports:
           - 3306:3306
@@ -44,7 +44,7 @@ jobs:
       
       - name: Wait for MySQL to be ready
         run: |
-          while ! mysqladmin ping -h 127.0.0.1 -P 3306 -u root -prootpassword --silent; do
+          while ! mysqladmin ping -h 127.0.0.1 -P 3306 -u root -p${{ secrets.TEST_DB_PASSWORD }} --silent; do
             echo "Waiting for MySQL..."
             sleep 2
           done
@@ -52,7 +52,7 @@ jobs:
       
       - name: Run database migrations
         run: |
-          mysql -h 127.0.0.1 -P 3306 -u root -prootpassword < database/schema.sql
+          mysql -h 127.0.0.1 -P 3306 -u root -p${{ secrets.TEST_DB_PASSWORD }} < database/schema.sql
       
       - name: Run tests
         run: npm test
@@ -61,11 +61,11 @@ jobs:
           PORT: 5000
           DB_HOST: 127.0.0.1
           DB_USER: root
-          DB_PASSWORD: rootpassword
+          DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
           DB_NAME: skills_management
           DB_PORT: 3306
           DB_SSL: false
-          JWT_SECRET: test_jwt_secret_key_for_ci_cd
+          JWT_SECRET: ${{ secrets.TEST_JWT_SECRET }}
           JWT_EXPIRES_IN: 7d
           FRONTEND_URL: http://localhost:3000
       
