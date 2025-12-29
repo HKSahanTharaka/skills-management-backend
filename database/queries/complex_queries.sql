@@ -1,20 +1,3 @@
--- ============================================
--- COMPLEX QUERIES FOR SKILLS MANAGEMENT SYSTEM
--- ============================================
--- This file contains complex SQL queries for advanced operations
--- These queries can be used in controllers or as stored procedures
--- ============================================
-
--- ============================================
--- 1. GET PERSONNEL WITH AVAILABILITY FOR PROJECT DATES
--- ============================================
--- Description: Retrieves all personnel with their availability percentage
--- for a specific project's date range. If no availability record exists,
--- defaults to 100% availability.
--- 
--- Usage: Replace @project_start_date and @project_end_date with actual dates
--- ============================================
-
 SELECT 
     p.*,
     COALESCE(
@@ -38,7 +21,6 @@ SELECT
 FROM personnel p
 ORDER BY p.name;
 
--- Alternative version using AVG for overlapping periods
 SELECT 
     p.*,
     COALESCE(
@@ -52,14 +34,6 @@ SELECT
 FROM personnel p
 ORDER BY p.name;
 
-
--- ============================================
--- 2. GET PERSONNEL WITH SKILL MATCHING SCORE FOR PROJECT
--- ============================================
--- Description: Returns personnel with their skill matching score
--- based on project requirements. Calculates how many required skills
--- each personnel has and their proficiency match status.
--- ============================================
 
 SELECT 
     p.id,
@@ -90,13 +64,6 @@ HAVING matching_skills_count > 0
 ORDER BY match_percentage DESC, p.experience_level DESC;
 
 
--- ============================================
--- 3. GET PROJECT ALLOCATION SUMMARY WITH UTILIZATION
--- ============================================
--- Description: Shows all projects with their allocated personnel,
--- total allocation percentages, and utilization metrics.
--- ============================================
-
 SELECT 
     proj.id as project_id,
     proj.project_name,
@@ -116,14 +83,6 @@ LEFT JOIN personnel p ON p.id = pa.personnel_id
 GROUP BY proj.id, proj.project_name, proj.status, proj.start_date, proj.end_date
 ORDER BY proj.start_date DESC;
 
-
--- ============================================
--- 4. GET PERSONNEL WORKLOAD ANALYSIS
--- ============================================
--- Description: Analyzes personnel workload by calculating total
--- allocation percentages across all active projects and checking
--- for over-allocation (>100% total allocation).
--- ============================================
 
 SELECT 
     p.id,
@@ -151,13 +110,6 @@ GROUP BY p.id, p.name, p.email, p.role_title
 HAVING total_allocation_percentage IS NOT NULL
 ORDER BY total_allocation_percentage DESC;
 
-
--- ============================================
--- 5. GET SKILL GAP ANALYSIS FOR PROJECT
--- ============================================
--- Description: Identifies which required skills are missing or
--- have insufficient proficiency among allocated personnel.
--- ============================================
 
 SELECT 
     prs.skill_id,
@@ -230,13 +182,6 @@ HAVING remaining_capacity > 0
 ORDER BY remaining_capacity DESC, p.experience_level DESC;
 
 
--- ============================================
--- 7. GET TOP SKILLED PERSONNEL BY CATEGORY
--- ============================================
--- Description: Identifies the most skilled personnel in each
--- skill category based on proficiency levels and years of experience.
--- ============================================
-
 SELECT 
     s.category,
     p.id as personnel_id,
@@ -262,13 +207,6 @@ INNER JOIN skills s ON s.id = ps.skill_id
 GROUP BY s.category, p.id, p.name, p.role_title, p.experience_level
 ORDER BY s.category, proficiency_score DESC, skills_count DESC;
 
-
--- ============================================
--- 8. GET PROJECT TIMELINE WITH ALLOCATIONS
--- ============================================
--- Description: Shows project timeline with all personnel allocations,
--- including overlap detection and resource conflicts.
--- ============================================
 
 SELECT 
     proj.id as project_id,
@@ -308,13 +246,6 @@ WHERE proj.status IN ('Planning', 'Active')
 ORDER BY proj.start_date, pa.start_date;
 
 
--- ============================================
--- 9. GET SKILL DEMAND VS SUPPLY ANALYSIS
--- ============================================
--- Description: Compares skill demand (from projects) vs supply
--- (from personnel) to identify skill shortages or surpluses.
--- ============================================
-
 SELECT 
     s.id as skill_id,
     s.skill_name,
@@ -344,13 +275,6 @@ GROUP BY s.id, s.skill_name, s.category
 HAVING projects_requiring_skill > 0 OR personnel_with_skill > 0
 ORDER BY projects_requiring_skill DESC, personnel_with_skill ASC;
 
-
--- ============================================
--- 10. GET PERSONNEL COMPETENCY MATRIX
--- ============================================
--- Description: Creates a comprehensive view of all personnel
--- with their skills, proficiency levels, and experience.
--- ============================================
 
 SELECT 
     p.id as personnel_id,
@@ -439,13 +363,6 @@ GROUP BY proj.id, proj.project_name, proj.status
 ORDER BY readiness_percentage DESC;
 
 
--- ============================================
--- 12. GET PERSONNEL UTILIZATION TREND
--- ============================================
--- Description: Shows personnel utilization over time by month,
--- useful for capacity planning and resource management.
--- ============================================
-
 SELECT 
     DATE_FORMAT(pa.start_date, '%Y-%m') as month,
     p.id as personnel_id,
@@ -465,21 +382,4 @@ GROUP BY DATE_FORMAT(pa.start_date, '%Y-%m'), p.id, p.name
 ORDER BY month DESC, total_allocation DESC;
 
 
--- ============================================
--- NOTES ON USAGE
--- ============================================
--- 1. Replace @project_id, @project_start_date, @project_end_date, 
---    @start_date, @end_date with actual values or use parameterized queries
--- 
--- 2. These queries can be adapted for use in Node.js controllers:
---    const [results] = await pool.execute(query, [param1, param2, ...]);
--- 
--- 3. For better performance, consider adding indexes on:
---    - personnel_availability (personnel_id, start_date, end_date)
---    - project_allocations (personnel_id, start_date, end_date)
---    - project_allocations (project_id, start_date, end_date)
--- 
--- 4. Some queries may need adjustment based on your specific
---    business logic requirements
--- ============================================
 

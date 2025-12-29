@@ -1,34 +1,8 @@
-/**
- * Authentication Middleware
- *
- * Purpose: Protect routes that require authentication
- *
- * How it works:
- * 1. Extract token from request header
- * 2. Verify token using JWT_SECRET
- * 3. If valid, attach user info to request object
- * 4. If invalid, return 401 Unauthorized error
- *
- * Usage: Any route that needs authentication will use this middleware
- * Example: router.get('/protected', authenticateToken, controllerFunction)
- */
-
 const jwt = require('jsonwebtoken');
 const { pool } = require('../config/database');
 
-/**
- * JWT Authentication Middleware
- *
- * This middleware protects routes by verifying JWT tokens.
- *
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
 const authenticateToken = async (req, res, next) => {
   try {
-    // Step 1: Extract token from request header
-    // Token is sent in Authorization header as: "Bearer <token>"
     const authHeader = req.headers['authorization'];
 
     if (!authHeader) {
@@ -40,8 +14,7 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
-    // Extract token from "Bearer <token>" format
-    const token = authHeader.split(' ')[1]; // Get token after "Bearer "
+    const token = authHeader.split(' ')[1];
 
     if (!token) {
       return res.status(401).json({
@@ -52,7 +25,6 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
-    // Step 2: Verify token using JWT_SECRET
     const jwtSecret = process.env.JWT_SECRET;
 
     if (!jwtSecret) {
@@ -66,10 +38,8 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
-    // Verify the token
     jwt.verify(token, jwtSecret, async (err, decoded) => {
       if (err) {
-        // Step 4: If invalid, return 401 Unauthorized error
         return res.status(401).json({
           success: false,
           error: {
@@ -78,8 +48,6 @@ const authenticateToken = async (req, res, next) => {
         });
       }
 
-      // Step 3: If valid, attach user info to request object
-      // Optionally verify user still exists in database
       try {
         const [users] = await pool.execute(
           'SELECT id, email, role, approval_status FROM users WHERE id = ?',
@@ -130,14 +98,6 @@ const authenticateToken = async (req, res, next) => {
   }
 };
 
-/**
- * Optional: Middleware to check if user has specific role
- *
- * Usage: router.get('/admin', authenticateToken, requireRole('admin'), controllerFunction)
- *
- * @param {string} role - Required role (admin, manager, user)
- * @returns {Function} Middleware function
- */
 const requireRole = (role) => {
   return (req, res, next) => {
     if (!req.user) {
@@ -162,14 +122,6 @@ const requireRole = (role) => {
   };
 };
 
-/**
- * Middleware to check if user has any of the specified roles
- *
- * Usage: router.get('/api', authenticateToken, requireAnyRole(['admin', 'manager']), controllerFunction)
- *
- * @param {Array} roles - Array of allowed roles
- * @returns {Function} Middleware function
- */
 const requireAnyRole = (roles) => {
   return (req, res, next) => {
     if (!req.user) {
@@ -194,31 +146,14 @@ const requireAnyRole = (roles) => {
   };
 };
 
-/**
- * Check if current user is admin
- * @param {Object} user - User object from req.user
- * @returns {boolean}
- */
 const isAdmin = (user) => {
   return user && user.role === 'admin';
 };
 
-/**
- * Check if current user is manager or admin
- * @param {Object} user - User object from req.user
- * @returns {boolean}
- */
 const isManagerOrAdmin = (user) => {
   return user && (user.role === 'admin' || user.role === 'manager');
 };
 
-/**
- * Check if current user can modify resource
- * Users can modify their own resources, managers and admins can modify all
- * @param {Object} user - User object from req.user
- * @param {number} resourceOwnerId - ID of resource owner
- * @returns {boolean}
- */
 const canModifyResource = (user, resourceOwnerId) => {
   if (!user) return false;
   if (user.role === 'admin' || user.role === 'manager') return true;

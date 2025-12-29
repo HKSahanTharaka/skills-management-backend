@@ -1,16 +1,5 @@
-/**
- * Matching Controller
- *
- * This controller handles personnel matching algorithms for projects.
- * Matches personnel based on required skills, proficiency levels, and availability.
- */
-
 const { pool } = require('../config/database');
 
-/**
- * Proficiency Level Mapping
- * Used to compare proficiency levels numerically
- */
 const PROFICIENCY_LEVELS = {
   Beginner: 1,
   Intermediate: 2,
@@ -18,33 +7,12 @@ const PROFICIENCY_LEVELS = {
   Expert: 4,
 };
 
-/**
- * Experience Level Priority
- * Used for sorting (higher is better)
- */
 const EXPERIENCE_PRIORITY = {
   Junior: 1,
   'Mid-Level': 2,
   Senior: 3,
 };
 
-/**
- * Find Matching Personnel for Project
- *
- * Matching Logic:
- * 1. Get project requirements (required skills with minimum proficiency)
- * 2. For each personnel:
- *    - Get all their skills
- *    - Check if they have ALL required skills
- *    - Check if their proficiency meets or exceeds minimum
- * 3. Calculate match score: (matching skills / total required) × 100
- * 4. Get availability for project date range
- * 5. Sort by: match score (desc), experience level (desc), availability (desc)
- *
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
 const findMatchingPersonnel = async (req, res, next) => {
   try {
     const project_id = req.params.id;
