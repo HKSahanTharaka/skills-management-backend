@@ -167,76 +167,31 @@ const createProjectAllocation = async (req, res, next) => {
     );
 
     // Calculate if adding this allocation would exceed 100%
-    // For simplicity, we check if the sum of maximum allocation in any overlapping period exceeds 100%
-    let maxTotalAllocation = allocation_percentage;
+    // We need to check the maximum concurrent allocation at any point in time
+    if (overlappingAllocations.length > 0) {
+      let maxConcurrentAllocation = allocation_percentage;
 
-    // Check each overlapping allocation
-    for (const allocation of overlappingAllocations) {
-      const overlapStart = new Date(
-        Math.max(new Date(start_date), new Date(allocation.start_date))
-      );
-      const overlapEnd = new Date(
-        Math.min(new Date(end_date), new Date(allocation.end_date))
-      );
-      const overlapDays =
-        Math.ceil((overlapEnd - overlapStart) / (1000 * 60 * 60 * 24)) + 1;
-
-      // Weighted average - for simplicity, use maximum overlap percentage
-      if (overlapDays > 0) {
-        maxTotalAllocation = Math.max(
-          maxTotalAllocation,
-          allocation.allocation_percentage + allocation_percentage
+      for (const existingAlloc of overlappingAllocations) {
+        const overlapStart = new Date(
+          Math.max(new Date(start_date), new Date(existingAlloc.start_date))
         );
-      }
-    }
+        const overlapEnd = new Date(
+          Math.min(new Date(end_date), new Date(existingAlloc.end_date))
+        );
 
-    // More precise check: sum allocations for each day
-    const allAllocations = [
-      ...overlappingAllocations,
-      {
-        start_date,
-        end_date,
-        allocation_percentage,
-      },
-    ];
-
-    // Check daily totals (simplified - check if any day would exceed 100%)
-    let exceedsLimit = false;
-    for (const alloc of allAllocations) {
-      let dailyTotal = alloc.allocation_percentage;
-
-      // Check overlap with other allocations
-      for (const otherAlloc of allAllocations) {
-        if (alloc !== otherAlloc) {
-          const overlapStart = new Date(
-            Math.max(
-              new Date(alloc.start_date),
-              new Date(otherAlloc.start_date)
-            )
-          );
-          const overlapEnd = new Date(
-            Math.min(new Date(alloc.end_date), new Date(otherAlloc.end_date))
-          );
-
-          if (overlapStart <= overlapEnd) {
-            dailyTotal += otherAlloc.allocation_percentage;
-          }
+        if (overlapStart <= overlapEnd) {
+          maxConcurrentAllocation += existingAlloc.allocation_percentage;
         }
       }
 
-      if (dailyTotal > 100) {
-        exceedsLimit = true;
-        break;
+      if (maxConcurrentAllocation > 100) {
+        return res.status(409).json({
+          success: false,
+          error: {
+            message: `Total allocation would exceed 100%. Current allocations (${maxConcurrentAllocation - allocation_percentage}%) plus requested allocation (${allocation_percentage}%) would total ${maxConcurrentAllocation}%.`,
+          },
+        });
       }
-    }
-
-    if (exceedsLimit) {
-      return res.status(409).json({
-        success: false,
-        error: {
-          message: `Total allocation would exceed 100%. Current allocations plus requested allocation (${allocation_percentage}%) would exceed capacity.`,
-        },
-      });
     }
 
     // Insert into project_allocations
@@ -599,26 +554,26 @@ const updateProjectAllocation = async (req, res, next) => {
         [existing.personnel_id, id, finalEndDate, finalStartDate]
       );
 
-      // Simplified check - sum allocations
-      let totalAllocation = finalAllocationPercentage;
-      for (const allocation of overlappingAllocations) {
+      let maxConcurrentAllocation = finalAllocationPercentage;
+      
+      for (const existingAlloc of overlappingAllocations) {
         const overlapStart = new Date(
-          Math.max(new Date(finalStartDate), new Date(allocation.start_date))
+          Math.max(new Date(finalStartDate), new Date(existingAlloc.start_date))
         );
         const overlapEnd = new Date(
-          Math.min(new Date(finalEndDate), new Date(allocation.end_date))
+          Math.min(new Date(finalEndDate), new Date(existingAlloc.end_date))
         );
 
         if (overlapStart <= overlapEnd) {
-          totalAllocation += allocation.allocation_percentage;
+          maxConcurrentAllocation += existingAlloc.allocation_percentage;
         }
       }
 
-      if (totalAllocation > 100) {
+      if (maxConcurrentAllocation > 100) {
         return res.status(409).json({
           success: false,
           error: {
-            message: `Total allocation would exceed 100%. Current allocations plus updated allocation (${finalAllocationPercentage}%) would exceed capacity.`,
+            message: `Total allocation would exceed 100%. Current allocations (${maxConcurrentAllocation - finalAllocationPercentage}%) plus updated allocation (${finalAllocationPercentage}%) would total ${maxConcurrentAllocation}%.`,
           },
         });
       }

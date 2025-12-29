@@ -224,7 +224,184 @@ const login = async (req, res, next) => {
   }
 };
 
+const getCurrentUser = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+
+    const [users] = await pool.execute(
+      `SELECT u.id, u.email, u.role, u.created_at, u.updated_at,
+              p.id as personnel_id, p.name, p.role_title, p.experience_level, 
+              p.profile_image_url, p.bio
+       FROM users u
+       LEFT JOIN personnel p ON u.id = p.user_id
+       WHERE u.id = ?`,
+      [userId]
+    );
+
+    if (users.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          message: 'User not found',
+        },
+      });
+    }
+
+    const userData = users[0];
+
+    res.status(200).json({
+      success: true,
+      data: {
+        id: userData.id,
+        email: userData.email,
+        role: userData.role,
+        created_at: userData.created_at,
+        updated_at: userData.updated_at,
+        personnel: userData.personnel_id ? {
+          id: userData.personnel_id,
+          name: userData.name,
+          role_title: userData.role_title,
+          experience_level: userData.experience_level,
+          profile_image_url: userData.profile_image_url,
+          bio: userData.bio,
+        } : null,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateProfile = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { email, currentPassword, newPassword } = req.body;
+
+    const [users] = await pool.execute(
+      'SELECT id, email, password FROM users WHERE id = ?',
+      [userId]
+    );
+
+    if (users.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          message: 'User not found',
+        },
+      });
+    }
+
+    const user = users[0];
+
+    if (email && email !== user.email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            message: 'Invalid email format',
+          },
+        });
+      }
+
+      const [existingUsers] = await pool.execute(
+        'SELECT id FROM users WHERE email = ? AND id != ?',
+        [email, userId]
+      );
+
+      if (existingUsers.length > 0) {
+        return res.status(409).json({
+          success: false,
+          error: {
+            message: 'Email already exists',
+          },
+        });
+      }
+
+      await pool.execute(
+        'UPDATE users SET email = ? WHERE id = ?',
+        [email, userId]
+      );
+    }
+
+    if (newPassword) {
+      if (!currentPassword) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            message: 'Current password is required to set a new password',
+          },
+        });
+      }
+
+      const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+
+      if (!isPasswordValid) {
+        return res.status(401).json({
+          success: false,
+          error: {
+            message: 'Current password is incorrect',
+          },
+        });
+      }
+
+      if (newPassword.length < 6) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            message: 'Password must be at least 6 characters long',
+          },
+        });
+      }
+
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+      await pool.execute(
+        'UPDATE users SET password = ? WHERE id = ?',
+        [hashedPassword, userId]
+      );
+    }
+
+    const [updatedUsers] = await pool.execute(
+      `SELECT u.id, u.email, u.role, u.created_at, u.updated_at,
+              p.id as personnel_id, p.name, p.role_title, p.experience_level, 
+              p.profile_image_url, p.bio
+       FROM users u
+       LEFT JOIN personnel p ON u.id = p.user_id
+       WHERE u.id = ?`,
+      [userId]
+    );
+
+    const userData = updatedUsers[0];
+
+    res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: {
+        id: userData.id,
+        email: userData.email,
+        role: userData.role,
+        created_at: userData.created_at,
+        updated_at: userData.updated_at,
+        personnel: userData.personnel_id ? {
+          id: userData.personnel_id,
+          name: userData.name,
+          role_title: userData.role_title,
+          experience_level: userData.experience_level,
+          profile_image_url: userData.profile_image_url,
+          bio: userData.bio,
+        } : null,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   register,
   login,
+  getCurrentUser,
+  updateProfile,
 };

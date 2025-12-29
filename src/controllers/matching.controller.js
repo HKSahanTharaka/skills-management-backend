@@ -48,9 +48,15 @@ const EXPERIENCE_PRIORITY = {
 const findMatchingPersonnel = async (req, res, next) => {
   try {
     const project_id = req.params.id;
-    const { additional_filters } = req.query;
+    
+    const additional_filters = {};
+    if (req.query.experience_level) {
+      additional_filters.experience_level = req.query.experience_level;
+    }
+    if (req.query.availability_percentage) {
+      additional_filters.availability_percentage = parseInt(req.query.availability_percentage);
+    }
 
-    // Validate project_id
     if (!project_id) {
       return res.status(400).json({
         success: false,
@@ -99,7 +105,6 @@ const findMatchingPersonnel = async (req, res, next) => {
       });
     }
 
-    // Get all personnel with optional filters
     let personnelQuery = 'SELECT * FROM personnel WHERE 1=1';
     const personnelParams = [];
 
@@ -177,8 +182,8 @@ const findMatchingPersonnel = async (req, res, next) => {
         personnelSkillsMapById[skill.skill_id] = skill;
       });
 
-      // Check each required skill
       const matchingSkills = [];
+      const missingSkills = [];
       let matchCount = 0;
 
       for (const requiredSkill of requiredSkills) {
@@ -194,21 +199,24 @@ const findMatchingPersonnel = async (req, res, next) => {
             matchCount++;
             matchingSkills.push({
               skillName: requiredSkill.skill_name,
+              skillId: requiredSkill.skill_id,
               required: requiredSkill.minimum_proficiency,
               actual: personnelSkill.proficiency_level,
               meets: true,
             });
           } else {
-            matchingSkills.push({
+            missingSkills.push({
               skillName: requiredSkill.skill_name,
+              skillId: requiredSkill.skill_id,
               required: requiredSkill.minimum_proficiency,
               actual: personnelSkill.proficiency_level,
               meets: false,
             });
           }
         } else {
-          matchingSkills.push({
+          missingSkills.push({
             skillName: requiredSkill.skill_name,
+            skillId: requiredSkill.skill_id,
             required: requiredSkill.minimum_proficiency,
             actual: null,
             meets: false,
@@ -229,15 +237,17 @@ const findMatchingPersonnel = async (req, res, next) => {
         }
       }
 
-      // Only include personnel with at least one matching skill
       if (matchCount > 0) {
         matchedPersonnel.push({
           personnelId: personnel.id,
           name: personnel.name,
+          email: personnel.email,
           roleTitle: personnel.role_title,
           experienceLevel: personnel.experience_level,
+          profileImageUrl: personnel.profile_image_url,
           matchScore: matchScore,
           matchingSkills: matchingSkills,
+          missingSkills: missingSkills,
           availability: availability,
         });
       }

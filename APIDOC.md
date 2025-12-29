@@ -1025,46 +1025,55 @@ This document provides comprehensive documentation for all API endpoints in the 
 
 ### Find Matching Personnel
 
-**Endpoint**: `POST /api/matching/find-personnel`
+**Endpoint**: `GET /api/matching/project/:id`
 
-**Authentication**: Required (Bearer token)
+**Authentication**: Required (Bearer token, Admin/Manager only)
 
-**Request Body**:
-```json
-{
-  "project_id": 1,
-  "additional_filters": {
-    "experience_level": "Senior",
-    "availability_percentage": 50
-  }
-}
+**URL Parameters**:
+- `id` (required): Project ID
+
+**Query Parameters** (optional):
+- `experience_level` (optional): Filter by experience level. Values: `Junior`, `Mid-Level`, `Senior`
+- `availability_percentage` (optional): Minimum availability percentage (0-100)
+
+**Example Request**:
 ```
-
-**Required Fields**: `project_id`
-
-**Optional Fields**: `additional_filters` (object with `experience_level` and/or `availability_percentage`)
+GET /api/matching/project/1?experience_level=Senior&availability_percentage=50
+```
 
 **Success Response** (200 OK):
 ```json
 {
   "success": true,
-  "project_id": 1,
-  "matches": [
+  "projectId": 1,
+  "projectName": "E-commerce Platform",
+  "requiredSkills": [
     {
-      "personnel_id": 1,
+      "skillId": 1,
+      "skillName": "React",
+      "minimumProficiency": "Advanced"
+    }
+  ],
+  "matchedPersonnel": [
+    {
+      "personnelId": 1,
       "name": "John Doe",
-      "match_score": 95,
-      "matching_skills": [
+      "email": "john@example.com",
+      "roleTitle": "Software Engineer",
+      "experienceLevel": "Senior",
+      "profileImageUrl": "https://example.com/image.jpg",
+      "matchScore": 95,
+      "matchingSkills": [
         {
-          "skill_id": 1,
-          "skill_name": "React",
-          "required_proficiency": "Advanced",
-          "personnel_proficiency": "Expert",
-          "match_status": "exceeds"
+          "skillName": "React",
+          "skillId": 1,
+          "required": "Advanced",
+          "actual": "Expert",
+          "meets": true
         }
       ],
-      "missing_skills": [],
-      "experience_level": "Senior"
+      "missingSkills": [],
+      "availability": 100
     }
   ]
 }
@@ -1090,44 +1099,13 @@ This document provides comprehensive documentation for all API endpoints in the 
   }
   ```
 - **401 Unauthorized**: Missing or invalid token
+- **403 Forbidden**: User role not authorized (requires admin or manager)
 
 ---
 
-### Get Personnel Suggestions for Project
+### Get Personnel Suggestions for Project (Deprecated)
 
-**Endpoint**: `GET /api/matching/project/:id/suggestions`
-
-**Authentication**: Required (Bearer token)
-
-**URL Parameters**:
-- `id` (required): Project ID
-
-**Success Response** (200 OK):
-```json
-{
-  "success": true,
-  "project_id": 1,
-  "suggestions": [
-    {
-      "personnel_id": 1,
-      "name": "John Doe",
-      "match_percentage": 95,
-      "skills_match": 5,
-      "skills_missing": 0,
-      "skills_partial": 0,
-      "details": {
-        "perfect_matches": 5,
-        "overqualified": 2,
-        "missing_skills": []
-      }
-    }
-  ]
-}
-```
-
-**Error Responses**:
-- **404 Not Found**: Project not found
-- **401 Unauthorized**: Missing or invalid token
+**Note**: This endpoint is documented but not implemented. Use `GET /api/matching/project/:id` instead.
 
 ---
 
