@@ -32,7 +32,7 @@ This document provides comprehensive documentation for all API endpoints in the 
 {
   "email": "user@example.com",
   "password": "securePassword123",
-  "role": "user"
+  "role": "manager"
 }
 ```
 
@@ -44,7 +44,7 @@ This document provides comprehensive documentation for all API endpoints in the 
   "user": {
     "id": 1,
     "email": "user@example.com",
-    "role": "user"
+    "role": "manager"
   }
 }
 ```
@@ -94,7 +94,7 @@ This document provides comprehensive documentation for all API endpoints in the 
   "user": {
     "id": 1,
     "email": "user@example.com",
-    "role": "user"
+    "role": "manager"
   }
 }
 ```

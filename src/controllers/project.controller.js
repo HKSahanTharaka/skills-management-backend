@@ -30,6 +30,7 @@ const createProject = async (req, res, next) => {
       start_date,
       end_date,
       status = 'Planning',
+      required_skills,
     } = req.body;
 
     // Validate required fields
@@ -39,6 +40,16 @@ const createProject = async (req, res, next) => {
         error: {
           message:
             'Missing required fields: project_name, start_date, and end_date are required',
+        },
+      });
+    }
+
+    // Validate required_skills
+    if (!required_skills || !Array.isArray(required_skills) || required_skills.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'At least one required skill must be specified',
         },
       });
     }
@@ -91,9 +102,32 @@ const createProject = async (req, res, next) => {
       [project_name, description || null, start_date, end_date, status]
     );
 
-    // Fetch the created project
+    // Insert required skills
+    if (required_skills && required_skills.length > 0) {
+      for (const skill of required_skills) {
+        await pool.execute(
+          'INSERT INTO project_required_skills (project_id, skill_id, minimum_proficiency) VALUES (?, ?, ?)',
+          [result.insertId, skill.skill_id, skill.minimum_proficiency]
+        );
+      }
+    }
+
+    // Fetch the created project with required skills
     const [createdProjects] = await pool.execute(
-      'SELECT * FROM projects WHERE id = ?',
+      `SELECT 
+        p.*,
+        JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'skill_id', prs.skill_id,
+            'skill_name', s.skill_name,
+            'minimum_proficiency', prs.minimum_proficiency
+          )
+        ) as required_skills
+      FROM projects p
+      LEFT JOIN project_required_skills prs ON p.id = prs.project_id
+      LEFT JOIN skills s ON prs.skill_id = s.id
+      WHERE p.id = ?
+      GROUP BY p.id`,
       [result.insertId]
     );
 
@@ -102,6 +136,19 @@ const createProject = async (req, res, next) => {
     if (project) {
       project.start_date = formatDate(project.start_date);
       project.end_date = formatDate(project.end_date);
+      
+      // Parse required_skills JSON
+      if (project.required_skills) {
+        const skillsData = typeof project.required_skills === 'string' 
+          ? JSON.parse(project.required_skills) 
+          : project.required_skills;
+        
+        project.required_skills = Array.isArray(skillsData) 
+          ? skillsData.filter(skill => skill && skill.skill_id !== null)
+          : [];
+      } else {
+        project.required_skills = [];
+      }
     }
 
     res.status(201).json({
@@ -348,7 +395,7 @@ const getProjectById = async (req, res, next) => {
 const updateProject = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { project_name, description, start_date, end_date, status } =
+    const { project_name, description, start_date, end_date, status, required_skills } =
       req.body;
 
     // Check project exists
@@ -462,9 +509,41 @@ const updateProject = async (req, res, next) => {
       updateParams
     );
 
-    // Fetch updated project
+    // Handle required_skills update if provided
+    if (required_skills && Array.isArray(required_skills)) {
+      // Delete existing required skills
+      await pool.execute(
+        'DELETE FROM project_required_skills WHERE project_id = ?',
+        [id]
+      );
+
+      // Insert new required skills
+      if (required_skills.length > 0) {
+        for (const skill of required_skills) {
+          await pool.execute(
+            'INSERT INTO project_required_skills (project_id, skill_id, minimum_proficiency) VALUES (?, ?, ?)',
+            [id, skill.skill_id, skill.minimum_proficiency]
+          );
+        }
+      }
+    }
+
+    // Fetch updated project with required skills
     const [updatedProjects] = await pool.execute(
-      'SELECT * FROM projects WHERE id = ?',
+      `SELECT 
+        p.*,
+        JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'skill_id', prs.skill_id,
+            'skill_name', s.skill_name,
+            'minimum_proficiency', prs.minimum_proficiency
+          )
+        ) as required_skills
+      FROM projects p
+      LEFT JOIN project_required_skills prs ON p.id = prs.project_id
+      LEFT JOIN skills s ON prs.skill_id = s.id
+      WHERE p.id = ?
+      GROUP BY p.id`,
       [id]
     );
 
@@ -473,6 +552,19 @@ const updateProject = async (req, res, next) => {
     if (project) {
       project.start_date = formatDate(project.start_date);
       project.end_date = formatDate(project.end_date);
+      
+      // Parse required_skills JSON
+      if (project.required_skills) {
+        const skillsData = typeof project.required_skills === 'string' 
+          ? JSON.parse(project.required_skills) 
+          : project.required_skills;
+        
+        project.required_skills = Array.isArray(skillsData) 
+          ? skillsData.filter(skill => skill && skill.skill_id !== null)
+          : [];
+      } else {
+        project.required_skills = [];
+      }
     }
 
     res.status(200).json({

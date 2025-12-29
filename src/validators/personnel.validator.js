@@ -60,6 +60,30 @@ const validateCreatePersonnel = [
     .isInt({ min: 1 })
     .withMessage('User ID must be a positive integer'),
 
+  // Validate skills array - REQUIRED
+  body('skills')
+    .notEmpty()
+    .withMessage('At least one skill is required')
+    .isArray({ min: 1 })
+    .withMessage('Skills must be an array with at least one skill'),
+
+  body('skills.*.skill_id')
+    .notEmpty()
+    .withMessage('Skill ID is required')
+    .isInt({ min: 1 })
+    .withMessage('Skill ID must be a positive integer'),
+
+  body('skills.*.proficiency_level')
+    .notEmpty()
+    .withMessage('Proficiency level is required')
+    .isIn(['Beginner', 'Intermediate', 'Advanced', 'Expert'])
+    .withMessage('Proficiency level must be one of: Beginner, Intermediate, Advanced, Expert'),
+
+  body('skills.*.years_of_experience')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('Years of experience must be a positive number'),
+
   // Middleware to check validation results
   (req, res, next) => {
     const errors = validationResult(req);
@@ -131,6 +155,27 @@ const validateUpdatePersonnel = [
     .optional({ checkFalsy: true })
     .isInt({ min: 1 })
     .withMessage('User ID must be a positive integer'),
+
+  // Validate skills array - OPTIONAL for updates
+  body('skills')
+    .optional()
+    .isArray()
+    .withMessage('Skills must be an array'),
+
+  body('skills.*.skill_id')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Skill ID must be a positive integer'),
+
+  body('skills.*.proficiency_level')
+    .optional()
+    .isIn(['Beginner', 'Intermediate', 'Advanced', 'Expert'])
+    .withMessage('Proficiency level must be one of: Beginner, Intermediate, Advanced, Expert'),
+
+  body('skills.*.years_of_experience')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('Years of experience must be a positive number'),
 
   // Middleware to check validation results
   (req, res, next) => {

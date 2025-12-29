@@ -37,7 +37,7 @@ const { pool } = require('../config/database');
  */
 const register = async (req, res, next) => {
   try {
-    const { email, password, role = 'user' } = req.body;
+    const { email, password, role = 'manager' } = req.body;
 
     // Validate required fields
     if (!email || !password) {
@@ -71,12 +71,12 @@ const register = async (req, res, next) => {
     }
 
     // Validate role
-    const validRoles = ['admin', 'manager', 'user'];
+    const validRoles = ['admin', 'manager'];
     if (!validRoles.includes(role)) {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Invalid role. Must be one of: admin, manager, user',
+          message: 'Invalid role. Must be one of: admin, manager',
         },
       });
     }

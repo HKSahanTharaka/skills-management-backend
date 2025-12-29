@@ -1,18 +1,31 @@
 /**
  * Permission Rules for Skills Management System
  * 
- * This module defines what each role can do in the system.
- * Follows the principle: ADMIN > MANAGER > USER
+ * Role Hierarchy and Access Control:
+ * 
+ * ADMIN (System Administrator):
+ * - Full system access and control
+ * - User management (create, delete, change roles)
+ * - Delete any resource (personnel, skills, projects)
+ * - System settings and logs
+ * - All manager permissions
+ * 
+ * MANAGER (Operations Manager):
+ * - Create, view, and update resources
+ * - Manage day-to-day operations
+ * - Cannot delete critical resources
+ * - Cannot manage user accounts
+ * - Cannot access system administration
  */
 
 const ROLES = {
   ADMIN: 'admin',
   MANAGER: 'manager',
-  USER: 'user',
 };
 
 /**
  * Personnel Permissions
+ * Both admin and manager have full access
  */
 const personnelPermissions = {
   // View permissions
@@ -20,11 +33,9 @@ const personnelPermissions = {
     return user.role === ROLES.ADMIN || user.role === ROLES.MANAGER;
   },
   
-  canViewPersonnelDetail: (user, personnelUserId) => {
-    // Admin and Manager can view anyone
-    // User can only view own profile
-    if (user.role === ROLES.ADMIN || user.role === ROLES.MANAGER) return true;
-    return user.id === personnelUserId;
+  canViewPersonnelDetail: (user) => {
+    // Both admin and manager can view anyone
+    return user.role === ROLES.ADMIN || user.role === ROLES.MANAGER;
   },
 
   // Create permissions
@@ -33,11 +44,9 @@ const personnelPermissions = {
   },
 
   // Update permissions
-  canUpdatePersonnel: (user, personnelUserId) => {
-    // Admin and Manager can update anyone
-    // User can only update own profile
-    if (user.role === ROLES.ADMIN || user.role === ROLES.MANAGER) return true;
-    return user.id === personnelUserId;
+  canUpdatePersonnel: (user) => {
+    // Both admin and manager can update anyone
+    return user.role === ROLES.ADMIN || user.role === ROLES.MANAGER;
   },
 
   // Delete permissions
@@ -54,11 +63,12 @@ const personnelPermissions = {
 
 /**
  * Skills Permissions
+ * Both admin and manager have full access
  */
 const skillsPermissions = {
   // View permissions
   canViewSkills: () => {
-    // All roles can view skills
+    // All authenticated users can view skills
     return true;
   },
 
@@ -81,31 +91,29 @@ const skillsPermissions = {
 
 /**
  * Personnel Skills Assignment Permissions
+ * Both admin and manager have full access
  */
 const personnelSkillsPermissions = {
   // Assign skills to someone
-  canAssignSkills: (user, targetPersonnelUserId) => {
-    // Admin and Manager can assign to anyone
-    // User can only assign to self
-    if (user.role === ROLES.ADMIN || user.role === ROLES.MANAGER) return true;
-    return user.id === targetPersonnelUserId;
+  canAssignSkills: (user) => {
+    // Both admin and manager can assign to anyone
+    return user.role === ROLES.ADMIN || user.role === ROLES.MANAGER;
   },
 
   // Update someone's skill proficiency
-  canUpdateSkillProficiency: (user, targetPersonnelUserId) => {
-    if (user.role === ROLES.ADMIN || user.role === ROLES.MANAGER) return true;
-    return user.id === targetPersonnelUserId;
+  canUpdateSkillProficiency: (user) => {
+    return user.role === ROLES.ADMIN || user.role === ROLES.MANAGER;
   },
 
   // Remove skills from someone
-  canRemoveSkills: (user, targetPersonnelUserId) => {
-    if (user.role === ROLES.ADMIN || user.role === ROLES.MANAGER) return true;
-    return user.id === targetPersonnelUserId;
+  canRemoveSkills: (user) => {
+    return user.role === ROLES.ADMIN || user.role === ROLES.MANAGER;
   },
 };
 
 /**
  * Projects Permissions
+ * Both admin and manager have full access
  */
 const projectsPermissions = {
   // View permissions
@@ -113,11 +121,9 @@ const projectsPermissions = {
     return user.role === ROLES.ADMIN || user.role === ROLES.MANAGER;
   },
 
-  canViewProject: (user, isAssignedToProject) => {
-    // Admin and Manager can view all
-    // User can only view if assigned
-    if (user.role === ROLES.ADMIN || user.role === ROLES.MANAGER) return true;
-    return isAssignedToProject;
+  canViewProject: (user) => {
+    // Both admin and manager can view all
+    return user.role === ROLES.ADMIN || user.role === ROLES.MANAGER;
   },
 
   // Create permissions
@@ -161,6 +167,7 @@ const matchingPermissions = {
 
 /**
  * Availability Permissions
+ * Both admin and manager have full access
  */
 const availabilityPermissions = {
   // View permissions
@@ -168,35 +175,30 @@ const availabilityPermissions = {
     return user.role === ROLES.ADMIN || user.role === ROLES.MANAGER;
   },
 
-  canViewAvailability: (user, personnelUserId) => {
-    // Admin and Manager can view anyone's
-    // User can only view own
-    if (user.role === ROLES.ADMIN || user.role === ROLES.MANAGER) return true;
-    return user.id === personnelUserId;
+  canViewAvailability: (user) => {
+    // Both admin and manager can view anyone's
+    return user.role === ROLES.ADMIN || user.role === ROLES.MANAGER;
   },
 
   // Set/Update permissions
-  canSetAvailability: (user, personnelUserId) => {
-    // Admin and Manager can set for anyone
-    // User can only set for self
-    if (user.role === ROLES.ADMIN || user.role === ROLES.MANAGER) return true;
-    return user.id === personnelUserId;
+  canSetAvailability: (user) => {
+    // Both admin and manager can set for anyone
+    return user.role === ROLES.ADMIN || user.role === ROLES.MANAGER;
   },
 
-  canUpdateAvailability: (user, availabilityOwnerId) => {
-    if (user.role === ROLES.ADMIN || user.role === ROLES.MANAGER) return true;
-    return user.id === availabilityOwnerId;
+  canUpdateAvailability: (user) => {
+    return user.role === ROLES.ADMIN || user.role === ROLES.MANAGER;
   },
 
   // Delete permissions
-  canDeleteAvailability: (user, availabilityOwnerId) => {
-    if (user.role === ROLES.ADMIN || user.role === ROLES.MANAGER) return true;
-    return user.id === availabilityOwnerId;
+  canDeleteAvailability: (user) => {
+    return user.role === ROLES.ADMIN || user.role === ROLES.MANAGER;
   },
 };
 
 /**
  * Allocation Permissions
+ * Both admin and manager have full access
  */
 const allocationPermissions = {
   // View permissions
@@ -204,11 +206,9 @@ const allocationPermissions = {
     return user.role === ROLES.ADMIN || user.role === ROLES.MANAGER;
   },
 
-  canViewAllocation: (user, personnelUserId) => {
-    // Admin and Manager can view all
-    // User can only view own
-    if (user.role === ROLES.ADMIN || user.role === ROLES.MANAGER) return true;
-    return user.id === personnelUserId;
+  canViewAllocation: (user) => {
+    // Both admin and manager can view all
+    return user.role === ROLES.ADMIN || user.role === ROLES.MANAGER;
   },
 
   // Create permissions
@@ -229,6 +229,7 @@ const allocationPermissions = {
 
 /**
  * User Management Permissions
+ * Only ADMIN can manage user accounts
  */
 const userManagementPermissions = {
   canManageUsers: (user) => {
@@ -237,29 +238,33 @@ const userManagementPermissions = {
   },
 
   canChangeUserRoles: (user) => {
+    // Only ADMIN can change user roles
     return user.role === ROLES.ADMIN;
   },
 
   canDeleteUsers: (user) => {
+    // Only ADMIN can delete users
     return user.role === ROLES.ADMIN;
   },
 
   canResetAnyPassword: (user) => {
+    // Only ADMIN can reset passwords
     return user.role === ROLES.ADMIN;
   },
 };
 
 /**
  * Reports & Dashboard Permissions
+ * Both admin and manager have full access
  */
 const reportsPermissions = {
   canViewFullDashboard: (user) => {
     return user.role === ROLES.ADMIN || user.role === ROLES.MANAGER;
   },
 
-  canViewPersonalDashboard: () => {
-    // All roles can view their own dashboard
-    return true;
+  canViewPersonalDashboard: (user) => {
+    // All authenticated users can view their own dashboard
+    return user.role === ROLES.ADMIN || user.role === ROLES.MANAGER;
   },
 
   canExportReports: (user) => {
@@ -273,17 +278,21 @@ const reportsPermissions = {
 
 /**
  * System Administration Permissions
+ * Only ADMIN has system-level access
  */
 const systemPermissions = {
   canAccessSystemSettings: (user) => {
+    // Only ADMIN can access system settings
     return user.role === ROLES.ADMIN;
   },
 
   canViewSystemLogs: (user) => {
+    // Only ADMIN can view system logs
     return user.role === ROLES.ADMIN;
   },
 
   canManageIntegrations: (user) => {
+    // Only ADMIN can manage integrations
     return user.role === ROLES.ADMIN;
   },
 };

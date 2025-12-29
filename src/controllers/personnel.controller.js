@@ -31,6 +31,7 @@ const createPersonnel = async (req, res, next) => {
       profile_image_url,
       bio,
       user_id,
+      skills,
     } = req.body;
 
     // Validate required fields
@@ -96,17 +97,50 @@ const createPersonnel = async (req, res, next) => {
       ]
     );
 
-    // Fetch the created personnel
+    // Insert skills for the personnel
+    if (skills && skills.length > 0) {
+      for (const skill of skills) {
+        await pool.execute(
+          'INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_of_experience) VALUES (?, ?, ?, ?)',
+          [
+            result.insertId,
+            skill.skill_id,
+            skill.proficiency_level,
+            skill.years_of_experience || 0,
+          ]
+        );
+      }
+    }
+
+    // Fetch the created personnel with skills
     const [createdPersonnel] = await pool.execute(
       'SELECT * FROM personnel WHERE id = ?',
       [result.insertId]
     );
 
-    // Return created personnel with ID
+    // Fetch skills for the personnel
+    const [personnelSkills] = await pool.execute(
+      `SELECT 
+        ps.id,
+        ps.skill_id,
+        s.skill_name,
+        s.category,
+        ps.proficiency_level,
+        ps.years_of_experience
+      FROM personnel_skills ps
+      INNER JOIN skills s ON ps.skill_id = s.id
+      WHERE ps.personnel_id = ?`,
+      [result.insertId]
+    );
+
+    // Return created personnel with ID and skills
     res.status(201).json({
       success: true,
       message: 'Personnel created successfully',
-      data: createdPersonnel[0],
+      data: {
+        ...createdPersonnel[0],
+        skills: personnelSkills,
+      },
     });
   } catch (error) {
     // Handle duplicate email error from database
@@ -312,6 +346,7 @@ const updatePersonnel = async (req, res, next) => {
       profile_image_url,
       bio,
       user_id,
+      skills,
     } = req.body;
 
     // Check if user has permission to update this personnel
@@ -435,11 +470,59 @@ const updatePersonnel = async (req, res, next) => {
       updateParams
     );
 
-    // Fetch updated personnel
+    // Handle skills update if provided
+    if (skills && Array.isArray(skills)) {
+      // Delete existing skills
+      await pool.execute(
+        'DELETE FROM personnel_skills WHERE personnel_id = ?',
+        [id]
+      );
+
+      // Insert new skills
+      if (skills.length > 0) {
+        for (const skill of skills) {
+          await pool.execute(
+            'INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_of_experience) VALUES (?, ?, ?, ?)',
+            [id, skill.skill_id, skill.proficiency_level, skill.years_of_experience || 0]
+          );
+        }
+      }
+    }
+
+    // Fetch updated personnel with skills
     const [updatedPersonnel] = await pool.execute(
-      'SELECT * FROM personnel WHERE id = ?',
+      `SELECT 
+        p.*,
+        JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'skill_id', ps.skill_id,
+            'skill_name', s.skill_name,
+            'skill_category', s.category,
+            'proficiency_level', ps.proficiency_level,
+            'years_of_experience', ps.years_of_experience
+          )
+        ) as skills
+      FROM personnel p
+      LEFT JOIN personnel_skills ps ON p.id = ps.personnel_id
+      LEFT JOIN skills s ON ps.skill_id = s.id
+      WHERE p.id = ?
+      GROUP BY p.id`,
       [id]
     );
+
+    // Parse skills JSON
+    if (updatedPersonnel[0].skills) {
+      // Check if skills is already an object or needs parsing
+      const skillsData = typeof updatedPersonnel[0].skills === 'string' 
+        ? JSON.parse(updatedPersonnel[0].skills) 
+        : updatedPersonnel[0].skills;
+      
+      updatedPersonnel[0].skills = Array.isArray(skillsData) 
+        ? skillsData.filter(skill => skill && skill.skill_id !== null)
+        : [];
+    } else {
+      updatedPersonnel[0].skills = [];
+    }
 
     // Return updated personnel
     res.status(200).json({
