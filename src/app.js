@@ -17,8 +17,8 @@ const app = express();
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || '*', // Allow requests from frontend URL or all origins in development
-    credentials: true, // Allow cookies/credentials to be sent
+    origin: process.env.FRONTEND_URL || '*',
+    credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
@@ -26,14 +26,14 @@ app.use(
 
 app.use(
   express.json({
-    limit: '10mb', // Limit JSON payload size
+    limit: '10mb',
   })
 );
 
 app.use(
   express.urlencoded({
-    extended: true, // Use qs library for parsing (supports nested objects)
-    limit: '10mb', // Limit URL-encoded payload size
+    extended: true,
+    limit: '10mb',
   })
 );
 app.get('/health', (req, res) => {
@@ -53,10 +53,7 @@ app.use('/api/availability', availabilityRoutes);
 app.use('/api/allocations', allocationRoutes);
 app.use('/api/managers', managerRoutes);
 
-// 404 handler - catches requests to non-existent routes
 app.use(notFoundHandler);
-
-// Global error handler - catches all errors from route handlers
 app.use(errorHandler);
 
 module.exports = app;

@@ -1,27 +1,5 @@
-/**
- * Availability Controller
- *
- * This controller handles personnel availability tracking.
- * Allows marking when someone is available or on leave,
- * setting partial availability, and tracking commitments.
- */
-
 const { pool } = require('../config/database');
 
-/**
- * Set Personnel Availability
- *
- * Steps:
- * 1. Validate personnel exists
- * 2. Validate date range (end_date must be after start_date)
- * 3. Validate availability percentage (0-100)
- * 4. Check for overlapping availability periods
- * 5. Insert into personnel_availability
- *
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
 const setPersonnelAvailability = async (req, res, next) => {
   try {
     const {
@@ -146,19 +124,6 @@ const setPersonnelAvailability = async (req, res, next) => {
   }
 };
 
-/**
- * Get Personnel Availability
- *
- * Steps:
- * 1. Validate personnel exists
- * 2. Get availability periods (optionally filtered by date range)
- * 3. Calculate total availability percentage for date range
- * 4. Return availability periods
- *
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
 const getPersonnelAvailability = async (req, res, next) => {
   try {
     const { personnelId } = req.params;
@@ -243,20 +208,6 @@ const getPersonnelAvailability = async (req, res, next) => {
   }
 };
 
-/**
- * Update Personnel Availability
- *
- * Steps:
- * 1. Validate availability period exists
- * 2. Validate dates if changed
- * 3. Validate availability percentage if changed
- * 4. Check for overlapping periods (excluding current period)
- * 5. Update availability period
- *
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
 const updatePersonnelAvailability = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -401,17 +352,6 @@ const updatePersonnelAvailability = async (req, res, next) => {
   }
 };
 
-/**
- * Delete Personnel Availability
- *
- * Steps:
- * 1. Validate availability period exists
- * 2. Delete from personnel_availability
- *
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
 const deletePersonnelAvailability = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -443,18 +383,6 @@ const deletePersonnelAvailability = async (req, res, next) => {
   }
 };
 
-/**
- * Check Availability Conflicts
- *
- * Helper function to check if personnel is available for a date range
- * and if allocation percentage exceeds available capacity
- *
- * @param {number} personnelId - Personnel ID
- * @param {string} startDate - Start date (YYYY-MM-DD)
- * @param {string} endDate - End date (YYYY-MM-DD)
- * @param {number} requiredPercentage - Required allocation percentage
- * @returns {Object} - Conflict information
- */
 const checkAvailabilityConflicts = async (
   personnelId,
   startDate,

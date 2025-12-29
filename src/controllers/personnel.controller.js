@@ -1,26 +1,6 @@
-/**
- * Personnel Controller
- *
- * This controller handles all CRUD operations for personnel management.
- * Includes validation, database operations, and error handling.
- */
-
 const { pool } = require('../config/database');
 const { canAccessPersonnel } = require('../utils/controllerHelpers');
 
-/**
- * Create Personnel
- *
- * Steps:
- * 1. Validate all required fields (name, email, role_title, experience_level)
- * 2. Check email uniqueness
- * 3. Insert into database
- * 4. Return created personnel with ID
- *
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
 const createPersonnel = async (req, res, next) => {
   try {
     const {
@@ -156,24 +136,6 @@ const createPersonnel = async (req, res, next) => {
   }
 };
 
-/**
- * Get All Personnel
- *
- * Supports:
- * - Filtering by experience_level, role_title
- * - Search by name or email
- * - Pagination (page, limit)
- *
- * Query building example:
- * Base query: SELECT * FROM personnel
- * + Filter: WHERE experience_level = 'Senior'
- * + Search: AND (name LIKE '%john%' OR email LIKE '%john%')
- * + Pagination: LIMIT 10 OFFSET 0
- *
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
 const getAllPersonnel = async (req, res, next) => {
   try {
     const {
@@ -244,19 +206,6 @@ const getAllPersonnel = async (req, res, next) => {
   }
 };
 
-/**
- * Get Single Personnel
- *
- * Steps:
- * 1. Extract ID from URL parameter
- * 2. Query database for that personnel
- * 3. Include their skills (JOIN with personnel_skills and skills tables)
- * 4. Return 404 if not found
- *
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
 const getPersonnelById = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -321,19 +270,6 @@ const getPersonnelById = async (req, res, next) => {
   }
 };
 
-/**
- * Update Personnel
- *
- * Steps:
- * 1. Validate ID exists
- * 2. Update only provided fields
- * 3. Check email uniqueness if email is being changed
- * 4. Return updated personnel
- *
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
 const updatePersonnel = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -544,18 +480,6 @@ const updatePersonnel = async (req, res, next) => {
   }
 };
 
-/**
- * Delete Personnel
- *
- * Steps:
- * 1. Validate ID exists
- * 2. Delete from database (CASCADE will handle related records)
- * 3. Return success message
- *
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
 const deletePersonnel = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -588,15 +512,6 @@ const deletePersonnel = async (req, res, next) => {
   }
 };
 
-/**
- * Get Personnel Skills
- *
- * Get all skills assigned to a personnel
- *
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
 const getPersonnelSkills = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -643,20 +558,6 @@ const getPersonnelSkills = async (req, res, next) => {
   }
 };
 
-/**
- * Assign Skill to Personnel
- *
- * Steps:
- * 1. Validate personnel exists
- * 2. Validate skill exists
- * 3. Check if assignment already exists
- * 4. Insert into personnel_skills table
- * 5. Return assignment details
- *
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
 const assignSkillToPersonnel = async (req, res, next) => {
   try {
     const { id } = req.params; // personnel_id
@@ -777,18 +678,6 @@ const assignSkillToPersonnel = async (req, res, next) => {
   }
 };
 
-/**
- * Update Skill Proficiency
- *
- * Steps:
- * 1. Validate assignment exists
- * 2. Update proficiency_level
- * 3. Optionally update years_of_experience
- *
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
 const updateSkillProficiency = async (req, res, next) => {
   try {
     const { personnelId, skillId } = req.params;
@@ -885,17 +774,6 @@ const updateSkillProficiency = async (req, res, next) => {
   }
 };
 
-/**
- * Remove Skill from Personnel
- *
- * Steps:
- * 1. Validate assignment exists
- * 2. Delete from personnel_skills
- *
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
 const removeSkillFromPersonnel = async (req, res, next) => {
   try {
     const { personnelId, skillId } = req.params;
