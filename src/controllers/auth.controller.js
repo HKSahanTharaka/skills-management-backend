@@ -102,20 +102,25 @@ const register = async (req, res, next) => {
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // Insert user into database
+    const approvalStatus = role === 'admin' ? 'approved' : 'pending';
+
     const [result] = await pool.execute(
-      'INSERT INTO users (email, password, role) VALUES (?, ?, ?)',
-      [email, hashedPassword, role]
+      'INSERT INTO users (email, password, role, approval_status) VALUES (?, ?, ?, ?)',
+      [email, hashedPassword, role, approvalStatus]
     );
 
-    // Return success response (don't include password!)
+    const message = role === 'manager' 
+      ? 'Registration successful. Your account is pending admin approval.'
+      : 'User registered successfully';
+
     res.status(201).json({
       success: true,
-      message: 'User registered successfully',
+      message: message,
       user: {
         id: result.insertId,
         email: email,
         role: role,
+        approval_status: approvalStatus,
       },
     });
   } catch (error) {
@@ -151,13 +156,11 @@ const login = async (req, res, next) => {
       });
     }
 
-    // Find user by email
     const [users] = await pool.execute(
-      'SELECT id, email, password, role FROM users WHERE email = ?',
+      'SELECT id, email, password, role, approval_status FROM users WHERE email = ?',
       [email]
     );
 
-    // Check if user exists
     if (users.length === 0) {
       return res.status(401).json({
         success: false,
@@ -168,6 +171,26 @@ const login = async (req, res, next) => {
     }
 
     const user = users[0];
+
+    if (user.approval_status === 'pending') {
+      return res.status(403).json({
+        success: false,
+        error: {
+          message: 'Your account is pending admin approval',
+          status: 'pending',
+        },
+      });
+    }
+
+    if (user.approval_status === 'rejected') {
+      return res.status(403).json({
+        success: false,
+        error: {
+          message: 'Your account has been rejected. Please contact the administrator',
+          status: 'rejected',
+        },
+      });
+    }
 
     // Compare provided password with hashed password
     // bcrypt.compare() automatically handles the comparison
@@ -200,14 +223,14 @@ const login = async (req, res, next) => {
         id: user.id,
         email: user.email,
         role: user.role,
+        approval_status: user.approval_status,
       },
       jwtSecret,
       {
-        expiresIn: process.env.JWT_EXPIRES_IN || '7d', // Token expires in 7 days
+        expiresIn: process.env.JWT_EXPIRES_IN || '7d',
       }
     );
 
-    // Return token and user info (don't include password!)
     res.status(200).json({
       success: true,
       message: 'Login successful',
@@ -216,6 +239,7 @@ const login = async (req, res, next) => {
         id: user.id,
         email: user.email,
         role: user.role,
+        approval_status: user.approval_status,
       },
     });
   } catch (error) {
@@ -229,7 +253,7 @@ const getCurrentUser = async (req, res, next) => {
     const userId = req.user.id;
 
     const [users] = await pool.execute(
-      `SELECT u.id, u.email, u.role, u.created_at, u.updated_at,
+      `SELECT u.id, u.email, u.role, u.approval_status, u.created_at, u.updated_at,
               p.id as personnel_id, p.name, p.role_title, p.experience_level, 
               p.profile_image_url, p.bio
        FROM users u
@@ -255,6 +279,7 @@ const getCurrentUser = async (req, res, next) => {
         id: userData.id,
         email: userData.email,
         role: userData.role,
+        approval_status: userData.approval_status,
         created_at: userData.created_at,
         updated_at: userData.updated_at,
         personnel: userData.personnel_id ? {
@@ -364,7 +389,7 @@ const updateProfile = async (req, res, next) => {
     }
 
     const [updatedUsers] = await pool.execute(
-      `SELECT u.id, u.email, u.role, u.created_at, u.updated_at,
+      `SELECT u.id, u.email, u.role, u.approval_status, u.created_at, u.updated_at,
               p.id as personnel_id, p.name, p.role_title, p.experience_level, 
               p.profile_image_url, p.bio
        FROM users u
@@ -382,6 +407,7 @@ const updateProfile = async (req, res, next) => {
         id: userData.id,
         email: userData.email,
         role: userData.role,
+        approval_status: userData.approval_status,
         created_at: userData.created_at,
         updated_at: userData.updated_at,
         personnel: userData.personnel_id ? {

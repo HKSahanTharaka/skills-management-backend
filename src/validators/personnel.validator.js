@@ -1,20 +1,5 @@
-/**
- * Personnel Validation Middleware
- *
- * Uses express-validator to validate personnel data before processing.
- * Validates:
- * - name: must not be empty, max 255 characters
- * - email: must be valid email format, max 255 characters
- * - role_title: must not be empty
- * - experience_level: must be one of [Junior, Mid-Level, Senior]
- */
-
 const { body, validationResult } = require('express-validator');
 
-/**
- * Validation rules for creating personnel
- * All fields are required for creation
- */
 const validateCreatePersonnel = [
   // Validate name: must not be empty, max 255 characters
   body('name')
@@ -100,10 +85,6 @@ const validateCreatePersonnel = [
   },
 ];
 
-/**
- * Validation rules for updating personnel
- * All fields are optional for updates
- */
 const validateUpdatePersonnel = [
   // Validate name: if provided, must not be empty, max 255 characters
   body('name')

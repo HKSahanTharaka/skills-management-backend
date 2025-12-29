@@ -1,32 +1,8 @@
-/**
- * Permission Rules for Skills Management System
- * 
- * Role Hierarchy and Access Control:
- * 
- * ADMIN (System Administrator):
- * - Full system access and control
- * - User management (create, delete, change roles)
- * - Delete any resource (personnel, skills, projects)
- * - System settings and logs
- * - All manager permissions
- * 
- * MANAGER (Operations Manager):
- * - Create, view, and update resources
- * - Manage day-to-day operations
- * - Cannot delete critical resources
- * - Cannot manage user accounts
- * - Cannot access system administration
- */
-
 const ROLES = {
   ADMIN: 'admin',
   MANAGER: 'manager',
 };
 
-/**
- * Personnel Permissions
- * Both admin and manager have full access
- */
 const personnelPermissions = {
   // View permissions
   canViewAllPersonnel: (user) => {
@@ -61,10 +37,6 @@ const personnelPermissions = {
   },
 };
 
-/**
- * Skills Permissions
- * Both admin and manager have full access
- */
 const skillsPermissions = {
   // View permissions
   canViewSkills: () => {
@@ -89,10 +61,6 @@ const skillsPermissions = {
   },
 };
 
-/**
- * Personnel Skills Assignment Permissions
- * Both admin and manager have full access
- */
 const personnelSkillsPermissions = {
   // Assign skills to someone
   canAssignSkills: (user) => {
@@ -111,10 +79,6 @@ const personnelSkillsPermissions = {
   },
 };
 
-/**
- * Projects Permissions
- * Both admin and manager have full access
- */
 const projectsPermissions = {
   // View permissions
   canViewAllProjects: (user) => {
@@ -148,9 +112,6 @@ const projectsPermissions = {
   },
 };
 
-/**
- * Matching System Permissions
- */
 const matchingPermissions = {
   canUseMatching: (user) => {
     return user.role === ROLES.ADMIN || user.role === ROLES.MANAGER;
@@ -165,10 +126,6 @@ const matchingPermissions = {
   },
 };
 
-/**
- * Availability Permissions
- * Both admin and manager have full access
- */
 const availabilityPermissions = {
   // View permissions
   canViewAllAvailability: (user) => {
@@ -196,10 +153,6 @@ const availabilityPermissions = {
   },
 };
 
-/**
- * Allocation Permissions
- * Both admin and manager have full access
- */
 const allocationPermissions = {
   // View permissions
   canViewAllAllocations: (user) => {
@@ -227,10 +180,6 @@ const allocationPermissions = {
   },
 };
 
-/**
- * User Management Permissions
- * Only ADMIN can manage user accounts
- */
 const userManagementPermissions = {
   canManageUsers: (user) => {
     // Only ADMIN can manage user accounts
@@ -253,10 +202,6 @@ const userManagementPermissions = {
   },
 };
 
-/**
- * Reports & Dashboard Permissions
- * Both admin and manager have full access
- */
 const reportsPermissions = {
   canViewFullDashboard: (user) => {
     return user.role === ROLES.ADMIN || user.role === ROLES.MANAGER;
@@ -276,10 +221,6 @@ const reportsPermissions = {
   },
 };
 
-/**
- * System Administration Permissions
- * Only ADMIN has system-level access
- */
 const systemPermissions = {
   canAccessSystemSettings: (user) => {
     // Only ADMIN can access system settings
@@ -297,9 +238,6 @@ const systemPermissions = {
   },
 };
 
-/**
- * Helper function to check permission
- */
 const checkPermission = (permissionFunction, user, ...args) => {
   if (!user) return false;
   try {

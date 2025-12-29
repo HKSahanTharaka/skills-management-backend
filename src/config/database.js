@@ -42,10 +42,9 @@ const pool = mysql.createPool({
  * These handlers catch database failures gracefully
  */
 pool.on('connection', (connection) => {
-  // eslint-disable-next-line no-console
-  console.log(
-    'New database connection established as id ' + connection.threadId
-  );
+  // Connection established - logging disabled to reduce console noise
+  // Uncomment below for debugging database connection issues
+  // console.log('New database connection established as id ' + connection.threadId);
 });
 
 pool.on('error', (error) => {

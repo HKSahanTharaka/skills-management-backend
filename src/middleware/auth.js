@@ -82,7 +82,7 @@ const authenticateToken = async (req, res, next) => {
       // Optionally verify user still exists in database
       try {
         const [users] = await pool.execute(
-          'SELECT id, email, role FROM users WHERE id = ?',
+          'SELECT id, email, role, approval_status FROM users WHERE id = ?',
           [decoded.id]
         );
 
@@ -95,21 +95,31 @@ const authenticateToken = async (req, res, next) => {
           });
         }
 
-        // Attach user info to request object
-        // This makes user info available in route handlers via req.user
-        req.user = users[0];
+        const user = users[0];
 
-        // Proceed to next middleware/route handler
+        if (user.approval_status !== 'approved') {
+          return res.status(403).json({
+            success: false,
+            error: {
+              message: user.approval_status === 'pending' 
+                ? 'Your account is pending admin approval'
+                : 'Your account has been rejected',
+              status: user.approval_status,
+            },
+          });
+        }
+
+        req.user = user;
+
         next();
       } catch (dbError) {
-        // If database lookup fails, still allow request with decoded token info
-        // This is a fallback - you can choose to be more strict
         // eslint-disable-next-line no-console
         console.error('Database error during authentication:', dbError);
         req.user = {
           id: decoded.id,
           email: decoded.email,
           role: decoded.role,
+          approval_status: decoded.approval_status,
         };
         next();
       }

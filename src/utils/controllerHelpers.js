@@ -1,9 +1,3 @@
-/**
- * Controller Helper Functions for Permission Checks
- * 
- * These functions help controllers verify permissions for resource access
- */
-
 const { pool } = require('../config/database');
 
 /**

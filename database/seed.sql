@@ -18,9 +18,11 @@ CREATE TABLE users (
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
     role ENUM('admin', 'manager') DEFAULT 'manager',
+    approval_status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_email (email)
+    INDEX idx_email (email),
+    INDEX idx_approval_status (approval_status)
 );
 
 -- Personnel table
@@ -136,17 +138,21 @@ CREATE TABLE project_allocations (
 -- ============================================
 -- 1. USERS (Authentication Accounts)
 -- Password for all users: "password123" (hashed with bcrypt)
+-- Admin accounts are automatically approved
+-- Manager accounts can have different approval statuses for testing
 -- ============================================
-INSERT INTO users (email, password, role) VALUES
--- Admin accounts
-('admin@techcorp.com', '$2a$10$rZ5jLZPJ5w9P5qPZ5w9P5uEjP5qPZ5w9P5qPZ5w9P5qPZ5w9P5qPZ5', 'admin'),
-('john.smith@techcorp.com', '$2a$10$rZ5jLZPJ5w9P5qPZ5w9P5uEjP5qPZ5w9P5qPZ5w9P5qPZ5w9P5qPZ5', 'admin'),
+INSERT INTO users (email, password, role, approval_status) VALUES
+-- Admin accounts (automatically approved)
+('admin@techcorp.com', '$2a$10$rZ5jLZPJ5w9P5qPZ5w9P5uEjP5qPZ5w9P5qPZ5w9P5qPZ5w9P5qPZ5', 'admin', 'approved'),
+('john.smith@techcorp.com', '$2a$10$rZ5jLZPJ5w9P5qPZ5w9P5uEjP5qPZ5w9P5qPZ5w9P5qPZ5w9P5qPZ5', 'admin', 'approved'),
 
--- Manager accounts
-('manager@techcorp.com', '$2a$10$rZ5jLZPJ5w9P5qPZ5w9P5uEjP5qPZ5w9P5qPZ5w9P5qPZ5w9P5qPZ5', 'manager'),
-('sarah.johnson@techcorp.com', '$2a$10$rZ5jLZPJ5w9P5qPZ5w9P5uEjP5qPZ5w9P5qPZ5w9P5qPZ5w9P5qPZ5', 'manager'),
-('michael.chen@techcorp.com', '$2a$10$rZ5jLZPJ5w9P5qPZ5w9P5uEjP5qPZ5w9P5qPZ5w9P5qPZ5w9P5qPZ5', 'manager'),
-('emily.davis@techcorp.com', '$2a$10$rZ5jLZPJ5w9P5qPZ5w9P5uEjP5qPZ5w9P5qPZ5w9P5qPZ5w9P5qPZ5', 'manager');
+-- Manager accounts (approved - can login immediately)
+('manager@techcorp.com', '$2a$10$rZ5jLZPJ5w9P5qPZ5w9P5uEjP5qPZ5w9P5qPZ5w9P5qPZ5w9P5qPZ5', 'manager', 'approved'),
+('sarah.johnson@techcorp.com', '$2a$10$rZ5jLZPJ5w9P5qPZ5w9P5uEjP5qPZ5w9P5qPZ5w9P5qPZ5w9P5qPZ5', 'manager', 'approved'),
+('michael.chen@techcorp.com', '$2a$10$rZ5jLZPJ5w9P5qPZ5w9P5uEjP5qPZ5w9P5qPZ5w9P5qPZ5w9P5qPZ5', 'manager', 'approved'),
+
+-- Manager account (pending - for testing approval workflow)
+('emily.davis@techcorp.com', '$2a$10$rZ5jLZPJ5w9P5qPZ5w9P5uEjP5qPZ5w9P5qPZ5w9P5qPZ5w9P5qPZ5', 'manager', 'pending');
 
 -- ============================================
 -- 2. SKILLS DATABASE
