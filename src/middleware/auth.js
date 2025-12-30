@@ -28,7 +28,6 @@ const authenticateToken = async (req, res, next) => {
     const jwtSecret = process.env.JWT_SECRET;
 
     if (!jwtSecret) {
-      // eslint-disable-next-line no-console
       console.error('JWT_SECRET is not set in environment variables');
       return res.status(500).json({
         success: false,
@@ -81,7 +80,6 @@ const authenticateToken = async (req, res, next) => {
 
         next();
       } catch (dbError) {
-        // eslint-disable-next-line no-console
         console.error('Database error during authentication:', dbError);
         req.user = {
           id: decoded.id,

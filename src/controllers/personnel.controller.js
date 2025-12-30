@@ -14,7 +14,6 @@ const createPersonnel = async (req, res, next) => {
       skills,
     } = req.body;
 
-    // Validate required fields
     if (!name || !email || !role_title || !experience_level) {
       return res.status(400).json({
         success: false,
@@ -25,7 +24,6 @@ const createPersonnel = async (req, res, next) => {
       });
     }
 
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({
@@ -36,7 +34,6 @@ const createPersonnel = async (req, res, next) => {
       });
     }
 
-    // Validate experience_level enum
     const validExperienceLevels = ['Junior', 'Mid-Level', 'Senior'];
     if (!validExperienceLevels.includes(experience_level)) {
       return res.status(400).json({
@@ -48,7 +45,6 @@ const createPersonnel = async (req, res, next) => {
       });
     }
 
-    // Check email uniqueness
     const [existingPersonnel] = await pool.execute(
       'SELECT id FROM personnel WHERE email = ?',
       [email]
@@ -63,7 +59,6 @@ const createPersonnel = async (req, res, next) => {
       });
     }
 
-    // Insert into database
     const [result] = await pool.execute(
       'INSERT INTO personnel (name, email, role_title, experience_level, profile_image_url, bio, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
       [
@@ -77,7 +72,6 @@ const createPersonnel = async (req, res, next) => {
       ]
     );
 
-    // Insert skills for the personnel
     if (skills && skills.length > 0) {
       for (const skill of skills) {
         await pool.execute(
@@ -92,13 +86,11 @@ const createPersonnel = async (req, res, next) => {
       }
     }
 
-    // Fetch the created personnel with skills
     const [createdPersonnel] = await pool.execute(
       'SELECT * FROM personnel WHERE id = ?',
       [result.insertId]
     );
 
-    // Fetch skills for the personnel
     const [personnelSkills] = await pool.execute(
       `SELECT 
         ps.id,
@@ -113,7 +105,6 @@ const createPersonnel = async (req, res, next) => {
       [result.insertId]
     );
 
-    // Return created personnel with ID and skills
     res.status(201).json({
       success: true,
       message: 'Personnel created successfully',
@@ -146,12 +137,10 @@ const getAllPersonnel = async (req, res, next) => {
       limit = 10,
     } = req.query;
 
-    // Build base query
     let query = 'SELECT * FROM personnel';
     const conditions = [];
     const params = [];
 
-    // Add filters
     if (experience_level) {
       conditions.push('experience_level = ?');
       params.push(experience_level);
@@ -162,35 +151,28 @@ const getAllPersonnel = async (req, res, next) => {
       params.push(role_title);
     }
 
-    // Add search
     if (search) {
       conditions.push('(name LIKE ? OR email LIKE ?)');
       const searchPattern = `%${search}%`;
       params.push(searchPattern, searchPattern);
     }
 
-    // Add WHERE clause if conditions exist
     if (conditions.length > 0) {
       query += ' WHERE ' + conditions.join(' AND ');
     }
 
-    // Get total count for pagination
     const countQuery = query.replace('SELECT *', 'SELECT COUNT(*) as total');
     const [countResult] = await pool.execute(countQuery, params);
     const total = countResult[0].total;
 
-    // Add pagination
     const limitValue = parseInt(limit);
     const offsetValue = (parseInt(page) - 1) * limitValue;
     query += ` ORDER BY created_at DESC LIMIT ${limitValue} OFFSET ${offsetValue}`;
 
-    // Execute query
     const [personnel] = await pool.execute(query, params);
 
-    // Calculate pagination metadata
     const totalPages = Math.ceil(total / parseInt(limit));
 
-    // Return array of personnel with pagination info
     res.status(200).json({
       success: true,
       data: personnel,
@@ -222,7 +204,6 @@ const getPersonnelById = async (req, res, next) => {
       });
     }
 
-    // Query database for personnel
     const [personnel] = await pool.execute(
       'SELECT * FROM personnel WHERE id = ?',
       [id]

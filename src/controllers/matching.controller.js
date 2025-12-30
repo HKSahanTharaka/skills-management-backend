@@ -34,7 +34,6 @@ const findMatchingPersonnel = async (req, res, next) => {
       });
     }
 
-    // Get project information
     const [projects] = await pool.execute(
       'SELECT * FROM projects WHERE id = ?',
       [project_id]
@@ -51,7 +50,6 @@ const findMatchingPersonnel = async (req, res, next) => {
 
     const project = projects[0];
 
-    // Get project required skills
     const [requiredSkills] = await pool.execute(
       `SELECT 
         prs.skill_id,
@@ -83,7 +81,6 @@ const findMatchingPersonnel = async (req, res, next) => {
 
     const [allPersonnel] = await pool.execute(personnelQuery, personnelParams);
 
-    // Get personnel skills in batch
     const personnelIds = allPersonnel.map((p) => p.id);
 
     let personnelSkillsMap = {};
@@ -239,7 +236,7 @@ const findMatchingPersonnel = async (req, res, next) => {
       return b.availability - a.availability;
     });
 
-    // Format required skills for response
+
     const formattedRequiredSkills = requiredSkills.map((rs) => ({
       skillId: rs.skill_id,
       skillName: rs.skill_name,

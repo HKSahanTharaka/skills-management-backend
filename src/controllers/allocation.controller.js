@@ -38,7 +38,8 @@ const createProjectAllocation = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Invalid start_date format. Use YYYY-MM-DD format',
+          message: 'Invalid start date format.',
+          hint: 'Please use YYYY-MM-DD format (e.g., 2025-01-15)',
         },
       });
     }
@@ -47,7 +48,8 @@ const createProjectAllocation = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Invalid end_date format. Use YYYY-MM-DD format',
+          message: 'Invalid end date format.',
+          hint: 'Please use YYYY-MM-DD format (e.g., 2025-12-31)',
         },
       });
     }
@@ -56,12 +58,12 @@ const createProjectAllocation = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'end_date must be after start_date',
+          message: 'End date must be after start date.',
+          hint: 'The allocation period must span at least one day.',
         },
       });
     }
 
-    // Validate project exists
     const [projects] = await pool.execute(
       'SELECT id, project_name FROM projects WHERE id = ?',
       [project_id]
@@ -76,7 +78,6 @@ const createProjectAllocation = async (req, res, next) => {
       });
     }
 
-    // Validate personnel exists
     const [personnel] = await pool.execute(
       'SELECT id, name FROM personnel WHERE id = ?',
       [personnel_id]
@@ -102,7 +103,8 @@ const createProjectAllocation = async (req, res, next) => {
       return res.status(409).json({
         success: false,
         error: {
-          message: `Personnel is not available for the requested period. Average availability: ${availabilityCheck.averageAvailability}%, Required: ${allocation_percentage}%`,
+          message: `Cannot allocate: Personnel availability is ${availabilityCheck.averageAvailability}%, but ${allocation_percentage}% allocation requested.`,
+          hint: `The person is only ${availabilityCheck.averageAvailability}% available during this period. Either reduce the allocation percentage or update their availability.`,
           conflicts: availabilityCheck.conflicts,
         },
       });
@@ -122,7 +124,8 @@ const createProjectAllocation = async (req, res, next) => {
         success: false,
         error: {
           message:
-            'Allocation already exists for this project and personnel in the specified date range',
+            'This person is already allocated to this project during the specified dates.',
+          hint: 'Check the project team roster or update the existing allocation instead of creating a new one.',
         },
       });
     }
@@ -156,7 +159,14 @@ const createProjectAllocation = async (req, res, next) => {
         return res.status(409).json({
           success: false,
           error: {
-            message: `Total allocation would exceed 100%. Current allocations (${maxConcurrentAllocation - allocation_percentage}%) plus requested allocation (${allocation_percentage}%) would total ${maxConcurrentAllocation}%.`,
+            message: `Over-allocation detected: This would result in ${maxConcurrentAllocation}% total allocation (exceeds 100% limit).`,
+            hint: `Current allocations: ${maxConcurrentAllocation - allocation_percentage}% + Requested: ${allocation_percentage}% = ${maxConcurrentAllocation}%. Consider reducing allocation percentage or adjusting dates.`,
+            details: {
+              currentAllocation: maxConcurrentAllocation - allocation_percentage,
+              requestedAllocation: allocation_percentage,
+              totalAllocation: maxConcurrentAllocation,
+              maxAllowed: 100,
+            },
           },
         });
       }
@@ -336,6 +346,7 @@ const getProjectTeam = async (req, res, next) => {
     const [allocations] = await pool.execute(
       `SELECT 
         pa.id,
+        pa.project_id,
         pa.personnel_id,
         p.name as personnel_name,
         p.email as personnel_email,
@@ -346,9 +357,11 @@ const getProjectTeam = async (req, res, next) => {
         pa.end_date,
         pa.role_in_project,
         pa.created_at,
-        pa.updated_at
+        pa.updated_at,
+        proj.project_name
       FROM project_allocations pa
       INNER JOIN personnel p ON pa.personnel_id = p.id
+      INNER JOIN projects proj ON pa.project_id = proj.id
       WHERE pa.project_id = ?
       ORDER BY pa.created_at DESC`,
       [id]

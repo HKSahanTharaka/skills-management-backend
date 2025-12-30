@@ -10,7 +10,6 @@ const errorHandler = (err, req, res) => {
     errorName: err.name,
   };
 
-  // eslint-disable-next-line no-console
   console.error('Error occurred:', {
     timestamp,
     method: req.method,
@@ -19,7 +18,6 @@ const errorHandler = (err, req, res) => {
   });
 
   if (process.env.NODE_ENV === 'development') {
-    // eslint-disable-next-line no-console
     console.error('Error details:', errorLog);
   }
 

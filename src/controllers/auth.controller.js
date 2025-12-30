@@ -6,7 +6,6 @@ const register = async (req, res, next) => {
   try {
     const { email, password, role = 'manager' } = req.body;
 
-    // Validate required fields
     if (!email || !password) {
       return res.status(400).json({
         success: false,
@@ -92,7 +91,6 @@ const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    // Validate required fields
     if (!email || !password) {
       return res.status(400).json({
         success: false,
