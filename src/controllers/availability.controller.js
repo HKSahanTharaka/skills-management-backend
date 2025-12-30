@@ -1,27 +1,5 @@
-/**
- * Availability Controller
- *
- * This controller handles personnel availability tracking.
- * Allows marking when someone is available or on leave,
- * setting partial availability, and tracking commitments.
- */
-
 const { pool } = require('../config/database');
 
-/**
- * Set Personnel Availability
- *
- * Steps:
- * 1. Validate personnel exists
- * 2. Validate date range (end_date must be after start_date)
- * 3. Validate availability percentage (0-100)
- * 4. Check for overlapping availability periods
- * 5. Insert into personnel_availability
- *
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
 const setPersonnelAvailability = async (req, res, next) => {
   try {
     const {
@@ -32,7 +10,6 @@ const setPersonnelAvailability = async (req, res, next) => {
       notes,
     } = req.body;
 
-    // Validate required fields
     if (!personnel_id || !start_date || !end_date) {
       return res.status(400).json({
         success: false,
@@ -43,7 +20,6 @@ const setPersonnelAvailability = async (req, res, next) => {
       });
     }
 
-    // Validate availability percentage
     if (availability_percentage < 0 || availability_percentage > 100) {
       return res.status(400).json({
         success: false,
@@ -53,7 +29,6 @@ const setPersonnelAvailability = async (req, res, next) => {
       });
     }
 
-    // Validate dates format and end_date must be after start_date
     const startDateObj = new Date(start_date);
     const endDateObj = new Date(end_date);
 
@@ -61,7 +36,8 @@ const setPersonnelAvailability = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Invalid start_date format. Use YYYY-MM-DD format',
+          message: 'Invalid start date format.',
+          hint: 'Please use YYYY-MM-DD format (e.g., 2025-01-15)',
         },
       });
     }
@@ -70,7 +46,8 @@ const setPersonnelAvailability = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Invalid end_date format. Use YYYY-MM-DD format',
+          message: 'Invalid end date format.',
+          hint: 'Please use YYYY-MM-DD format (e.g., 2025-12-31)',
         },
       });
     }
@@ -79,12 +56,12 @@ const setPersonnelAvailability = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'end_date must be after start_date',
+          message: 'End date must be after start date.',
+          hint: 'The end date should be at least one day after the start date.',
         },
       });
     }
 
-    // Validate personnel exists
     const [personnel] = await pool.execute(
       'SELECT id FROM personnel WHERE id = ?',
       [personnel_id]
@@ -99,7 +76,6 @@ const setPersonnelAvailability = async (req, res, next) => {
       });
     }
 
-    // Check for overlapping availability periods
     const [overlapping] = await pool.execute(
       `SELECT id FROM personnel_availability 
        WHERE personnel_id = ? 
@@ -113,12 +89,12 @@ const setPersonnelAvailability = async (req, res, next) => {
         success: false,
         error: {
           message:
-            'Availability period overlaps with existing availability periods. Please update or delete the existing period first.',
+            'This date range overlaps with an existing availability period. Please adjust the dates or update the existing period instead.',
+          hint: 'You cannot have overlapping availability periods. Each date should only belong to one availability period.',
         },
       });
     }
 
-    // Insert into personnel_availability
     const [result] = await pool.execute(
       'INSERT INTO personnel_availability (personnel_id, start_date, end_date, availability_percentage, notes) VALUES (?, ?, ?, ?, ?)',
       [
@@ -130,7 +106,6 @@ const setPersonnelAvailability = async (req, res, next) => {
       ]
     );
 
-    // Fetch the created availability period
     const [createdAvailability] = await pool.execute(
       'SELECT * FROM personnel_availability WHERE id = ?',
       [result.insertId]
@@ -146,25 +121,11 @@ const setPersonnelAvailability = async (req, res, next) => {
   }
 };
 
-/**
- * Get Personnel Availability
- *
- * Steps:
- * 1. Validate personnel exists
- * 2. Get availability periods (optionally filtered by date range)
- * 3. Calculate total availability percentage for date range
- * 4. Return availability periods
- *
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
 const getPersonnelAvailability = async (req, res, next) => {
   try {
     const { personnelId } = req.params;
     const { start_date, end_date } = req.query;
 
-    // Validate personnel exists
     const [personnel] = await pool.execute(
       'SELECT id, name FROM personnel WHERE id = ?',
       [personnelId]
@@ -243,20 +204,6 @@ const getPersonnelAvailability = async (req, res, next) => {
   }
 };
 
-/**
- * Update Personnel Availability
- *
- * Steps:
- * 1. Validate availability period exists
- * 2. Validate dates if changed
- * 3. Validate availability percentage if changed
- * 4. Check for overlapping periods (excluding current period)
- * 5. Update availability period
- *
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
 const updatePersonnelAvailability = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -401,17 +348,6 @@ const updatePersonnelAvailability = async (req, res, next) => {
   }
 };
 
-/**
- * Delete Personnel Availability
- *
- * Steps:
- * 1. Validate availability period exists
- * 2. Delete from personnel_availability
- *
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
 const deletePersonnelAvailability = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -443,18 +379,6 @@ const deletePersonnelAvailability = async (req, res, next) => {
   }
 };
 
-/**
- * Check Availability Conflicts
- *
- * Helper function to check if personnel is available for a date range
- * and if allocation percentage exceeds available capacity
- *
- * @param {number} personnelId - Personnel ID
- * @param {string} startDate - Start date (YYYY-MM-DD)
- * @param {string} endDate - End date (YYYY-MM-DD)
- * @param {number} requiredPercentage - Required allocation percentage
- * @returns {Object} - Conflict information
- */
 const checkAvailabilityConflicts = async (
   personnelId,
   startDate,

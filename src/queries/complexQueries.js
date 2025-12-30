@@ -1,26 +1,5 @@
-/**
- * Complex Queries Module
- *
- * This module contains complex SQL queries for advanced operations
- * in the Skills Management System. These queries can be used directly
- * in controllers or services.
- *
- * All queries use parameterized statements to prevent SQL injection.
- */
-
 const { pool } = require('../config/database');
 
-/**
- * 1. Get Personnel with Availability for Project Dates
- *
- * Retrieves all personnel with their availability percentage
- * for a specific project's date range. If no availability record exists,
- * defaults to 100% availability.
- *
- * @param {string} projectStartDate - Project start date (YYYY-MM-DD)
- * @param {string} projectEndDate - Project end date (YYYY-MM-DD)
- * @returns {Promise<Array>} Array of personnel with availability data
- */
 const getPersonnelWithAvailabilityForProjectDates = async (
   projectStartDate,
   projectEndDate
@@ -59,15 +38,6 @@ const getPersonnelWithAvailabilityForProjectDates = async (
   return results;
 };
 
-/**
- * 2. Get Personnel with Skill Matching Score for Project
- *
- * Returns personnel with their skill matching score based on project requirements.
- * Calculates how many required skills each personnel has and their proficiency match status.
- *
- * @param {number} projectId - Project ID
- * @returns {Promise<Array>} Array of personnel with matching scores
- */
 const getPersonnelWithSkillMatchingScore = async (projectId) => {
   const query = `
     SELECT 
@@ -103,14 +73,6 @@ const getPersonnelWithSkillMatchingScore = async (projectId) => {
   return results;
 };
 
-/**
- * 3. Get Project Allocation Summary with Utilization
- *
- * Shows all projects with their allocated personnel, total allocation percentages,
- * and utilization metrics.
- *
- * @returns {Promise<Array>} Array of projects with allocation summaries
- */
 const getProjectAllocationSummary = async () => {
   const query = `
     SELECT 
@@ -137,14 +99,6 @@ const getProjectAllocationSummary = async () => {
   return results;
 };
 
-/**
- * 4. Get Personnel Workload Analysis
- *
- * Analyzes personnel workload by calculating total allocation percentages
- * across all active projects and checking for over-allocation (>100% total allocation).
- *
- * @returns {Promise<Array>} Array of personnel with workload analysis
- */
 const getPersonnelWorkloadAnalysis = async () => {
   const query = `
     SELECT 
@@ -177,15 +131,6 @@ const getPersonnelWorkloadAnalysis = async () => {
   return results;
 };
 
-/**
- * 5. Get Skill Gap Analysis for Project
- *
- * Identifies which required skills are missing or have insufficient
- * proficiency among allocated personnel.
- *
- * @param {number} projectId - Project ID
- * @returns {Promise<Array>} Array of skill gaps
- */
 const getSkillGapAnalysis = async (projectId) => {
   const query = `
     SELECT 
@@ -225,16 +170,6 @@ const getSkillGapAnalysis = async (projectId) => {
   return results;
 };
 
-/**
- * 6. Get Available Personnel for Date Range
- *
- * Finds personnel who are available (not over-allocated) for a specific
- * date range, considering both availability records and existing project allocations.
- *
- * @param {string} startDate - Start date (YYYY-MM-DD)
- * @param {string} endDate - End date (YYYY-MM-DD)
- * @returns {Promise<Array>} Array of available personnel
- */
 const getAvailablePersonnelForDateRange = async (startDate, endDate) => {
   const query = `
     SELECT 
@@ -281,15 +216,6 @@ const getAvailablePersonnelForDateRange = async (startDate, endDate) => {
   return results;
 };
 
-/**
- * 7. Get Top Skilled Personnel by Category
- *
- * Identifies the most skilled personnel in each skill category based on
- * proficiency levels and years of experience.
- *
- * @param {string} category - Optional skill category filter
- * @returns {Promise<Array>} Array of top skilled personnel
- */
 const getTopSkilledPersonnelByCategory = async (category = null) => {
   let query = `
     SELECT 
@@ -331,15 +257,6 @@ const getTopSkilledPersonnelByCategory = async (category = null) => {
   return results;
 };
 
-/**
- * 8. Get Project Timeline with Allocations
- *
- * Shows project timeline with all personnel allocations, including
- * overlap detection and resource conflicts.
- *
- * @param {number} projectId - Optional project ID filter
- * @returns {Promise<Array>} Array of project timelines
- */
 const getProjectTimelineWithAllocations = async (projectId = null) => {
   let query = `
     SELECT 
@@ -377,14 +294,6 @@ const getProjectTimelineWithAllocations = async (projectId = null) => {
   return results;
 };
 
-/**
- * 9. Get Skill Demand vs Supply Analysis
- *
- * Compares skill demand (from projects) vs supply (from personnel)
- * to identify skill shortages or surpluses.
- *
- * @returns {Promise<Array>} Array of skill demand/supply analysis
- */
 const getSkillDemandVsSupply = async () => {
   const query = `
     SELECT 
@@ -421,15 +330,6 @@ const getSkillDemandVsSupply = async () => {
   return results;
 };
 
-/**
- * 10. Get Personnel Competency Matrix
- *
- * Creates a comprehensive view of all personnel with their skills,
- * proficiency levels, and experience.
- *
- * @param {number} personnelId - Optional personnel ID filter
- * @returns {Promise<Array>} Array of personnel competency data
- */
 const getPersonnelCompetencyMatrix = async (personnelId = null) => {
   let query = `
     SELECT 
@@ -459,15 +359,6 @@ const getPersonnelCompetencyMatrix = async (personnelId = null) => {
   return results;
 };
 
-/**
- * 11. Get Project Readiness Score
- *
- * Calculates a readiness score for projects based on whether all
- * required skills are covered by allocated personnel.
- *
- * @param {number} projectId - Optional project ID filter
- * @returns {Promise<Array>} Array of projects with readiness scores
- */
 const getProjectReadinessScore = async (projectId = null) => {
   let query = `
     SELECT 
@@ -540,15 +431,6 @@ const getProjectReadinessScore = async (projectId = null) => {
   return results;
 };
 
-/**
- * 12. Get Personnel Utilization Trend
- *
- * Shows personnel utilization over time by month, useful for
- * capacity planning and resource management.
- *
- * @param {number} months - Number of months to look back (default: 12)
- * @returns {Promise<Array>} Array of utilization trends
- */
 const getPersonnelUtilizationTrend = async (months = 12) => {
   const query = `
     SELECT 

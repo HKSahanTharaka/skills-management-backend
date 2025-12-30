@@ -1,45 +1,11 @@
-/**
- * Authentication Controller
- *
- * This controller handles user registration and login using JWT authentication.
- *
- * Understanding JWT Authentication:
- * - User sends email/password
- * - Backend verifies credentials
- * - Backend creates JWT token (like a special ticket)
- * - User includes token in future requests
- * - Backend verifies token to identify user
- */
-
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { pool } = require('../config/database');
 
-/**
- * Register Function
- *
- * Steps:
- * 1. Validate email format
- * 2. Check if email already exists
- * 3. Hash password using bcrypt (never store plain passwords!)
- * 4. Insert user into database
- * 5. Return success message
- *
- * Password Hashing Explained:
- * Plain password: "mypassword123"
- * ↓ (bcrypt hashing)
- * Hashed: "$2a$10$N9qo8uLOickgx2ZMRZoMye.IjfO4ZjJZjZ..."
- * Even if someone steals your database, they can't read passwords!
- *
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
 const register = async (req, res, next) => {
   try {
     const { email, password, role = 'manager' } = req.body;
 
-    // Validate required fields
     if (!email || !password) {
       return res.status(400).json({
         success: false,
@@ -49,7 +15,6 @@ const register = async (req, res, next) => {
       });
     }
 
-    // Validate email format using regex
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({
@@ -60,7 +25,6 @@ const register = async (req, res, next) => {
       });
     }
 
-    // Validate password length
     if (password.length < 6) {
       return res.status(400).json({
         success: false,
@@ -70,7 +34,6 @@ const register = async (req, res, next) => {
       });
     }
 
-    // Validate role
     const validRoles = ['admin', 'manager'];
     if (!validRoles.includes(role)) {
       return res.status(400).json({
@@ -81,7 +44,6 @@ const register = async (req, res, next) => {
       });
     }
 
-    // Check if email already exists
     const [existingUsers] = await pool.execute(
       'SELECT id FROM users WHERE email = ?',
       [email]
@@ -96,9 +58,6 @@ const register = async (req, res, next) => {
       });
     }
 
-    // Hash password using bcrypt
-    // Salt rounds: 10 (higher = more secure but slower)
-    // Never store plain passwords!
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
@@ -109,7 +68,7 @@ const register = async (req, res, next) => {
       [email, hashedPassword, role, approvalStatus]
     );
 
-    const message = role === 'manager' 
+    const message = role === 'manager'
       ? 'Registration successful. Your account is pending admin approval.'
       : 'User registered successfully';
 
@@ -124,29 +83,14 @@ const register = async (req, res, next) => {
       },
     });
   } catch (error) {
-    // Pass error to error handling middleware
     next(error);
   }
 };
 
-/**
- * Login Function
- *
- * Steps:
- * 1. Find user by email
- * 2. Compare provided password with hashed password
- * 3. Generate JWT token if password matches
- * 4. Return token and user info
- *
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
 const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    // Validate required fields
     if (!email || !password) {
       return res.status(400).json({
         success: false,
@@ -192,8 +136,6 @@ const login = async (req, res, next) => {
       });
     }
 
-    // Compare provided password with hashed password
-    // bcrypt.compare() automatically handles the comparison
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
@@ -205,10 +147,8 @@ const login = async (req, res, next) => {
       });
     }
 
-    // Generate JWT token if password matches
-    // JWT token contains user info (payload) and is signed with a secret key
     const jwtSecret = process.env.JWT_SECRET;
-    
+
     if (!jwtSecret) {
       console.error('JWT_SECRET is not configured in environment variables');
       return res.status(500).json({
@@ -217,7 +157,7 @@ const login = async (req, res, next) => {
         message: 'Authentication service is not properly configured'
       });
     }
-    
+
     const token = jwt.sign(
       {
         id: user.id,
@@ -243,7 +183,6 @@ const login = async (req, res, next) => {
       },
     });
   } catch (error) {
-    // Pass error to error handling middleware
     next(error);
   }
 };
@@ -253,9 +192,9 @@ const getCurrentUser = async (req, res, next) => {
     const userId = req.user.id;
 
     const [users] = await pool.execute(
-      `SELECT u.id, u.email, u.role, u.approval_status, u.created_at, u.updated_at,
+      `SELECT u.id, u.email, u.role, u.approval_status, u.profile_image_url, u.created_at, u.updated_at,
               p.id as personnel_id, p.name, p.role_title, p.experience_level, 
-              p.profile_image_url, p.bio
+              p.profile_image_url as personnel_profile_image_url, p.bio
        FROM users u
        LEFT JOIN personnel p ON u.id = p.user_id
        WHERE u.id = ?`,
@@ -280,6 +219,7 @@ const getCurrentUser = async (req, res, next) => {
         email: userData.email,
         role: userData.role,
         approval_status: userData.approval_status,
+        profile_image_url: userData.profile_image_url,
         created_at: userData.created_at,
         updated_at: userData.updated_at,
         personnel: userData.personnel_id ? {
@@ -287,7 +227,7 @@ const getCurrentUser = async (req, res, next) => {
           name: userData.name,
           role_title: userData.role_title,
           experience_level: userData.experience_level,
-          profile_image_url: userData.profile_image_url,
+          profile_image_url: userData.personnel_profile_image_url,
           bio: userData.bio,
         } : null,
       },
@@ -300,7 +240,7 @@ const getCurrentUser = async (req, res, next) => {
 const updateProfile = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const { email, currentPassword, newPassword } = req.body;
+    const { email, currentPassword, newPassword, profile_image_url } = req.body;
 
     const [users] = await pool.execute(
       'SELECT id, email, password FROM users WHERE id = ?',
@@ -349,6 +289,13 @@ const updateProfile = async (req, res, next) => {
       );
     }
 
+    if (profile_image_url !== undefined) {
+      await pool.execute(
+        'UPDATE users SET profile_image_url = ? WHERE id = ?',
+        [profile_image_url || null, userId]
+      );
+    }
+
     if (newPassword) {
       if (!currentPassword) {
         return res.status(400).json({
@@ -389,9 +336,9 @@ const updateProfile = async (req, res, next) => {
     }
 
     const [updatedUsers] = await pool.execute(
-      `SELECT u.id, u.email, u.role, u.approval_status, u.created_at, u.updated_at,
+      `SELECT u.id, u.email, u.role, u.approval_status, u.profile_image_url, u.created_at, u.updated_at,
               p.id as personnel_id, p.name, p.role_title, p.experience_level, 
-              p.profile_image_url, p.bio
+              p.profile_image_url as personnel_profile_image_url, p.bio
        FROM users u
        LEFT JOIN personnel p ON u.id = p.user_id
        WHERE u.id = ?`,
@@ -408,6 +355,7 @@ const updateProfile = async (req, res, next) => {
         email: userData.email,
         role: userData.role,
         approval_status: userData.approval_status,
+        profile_image_url: userData.profile_image_url,
         created_at: userData.created_at,
         updated_at: userData.updated_at,
         personnel: userData.personnel_id ? {
@@ -415,7 +363,7 @@ const updateProfile = async (req, res, next) => {
           name: userData.name,
           role_title: userData.role_title,
           experience_level: userData.experience_level,
-          profile_image_url: userData.profile_image_url,
+          profile_image_url: userData.personnel_profile_image_url,
           bio: userData.bio,
         } : null,
       },

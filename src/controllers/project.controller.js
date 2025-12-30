@@ -1,27 +1,6 @@
-/**
- * Project Controller
- *
- * This controller handles all CRUD operations for projects management.
- * Includes validation, database operations, and error handling.
- */
-
 const { pool } = require('../config/database');
 const { formatDate } = require('../utils/helpers');
 
-/**
- * Create Project
- *
- * Steps:
- * 1. Validate all required fields (project_name, description, start_date, end_date, status)
- * 2. Validate dates (end_date must be after start_date)
- * 3. Validate status enum
- * 4. Insert into database
- * 5. Return created project
- *
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
 const createProject = async (req, res, next) => {
   try {
     const {
@@ -33,7 +12,6 @@ const createProject = async (req, res, next) => {
       required_skills,
     } = req.body;
 
-    // Validate required fields
     if (!project_name || !start_date || !end_date) {
       return res.status(400).json({
         success: false,
@@ -44,7 +22,6 @@ const createProject = async (req, res, next) => {
       });
     }
 
-    // Validate required_skills
     if (!required_skills || !Array.isArray(required_skills) || required_skills.length === 0) {
       return res.status(400).json({
         success: false,
@@ -54,7 +31,6 @@ const createProject = async (req, res, next) => {
       });
     }
 
-    // Validate status enum
     const validStatuses = ['Planning', 'Active', 'Completed', 'On Hold'];
     if (status && !validStatuses.includes(status)) {
       return res.status(400).json({
@@ -65,7 +41,6 @@ const createProject = async (req, res, next) => {
       });
     }
 
-    // Validate dates format and end_date must be after start_date
     const startDateObj = new Date(start_date);
     const endDateObj = new Date(end_date);
 
@@ -96,13 +71,11 @@ const createProject = async (req, res, next) => {
       });
     }
 
-    // Insert into database
     const [result] = await pool.execute(
       'INSERT INTO projects (project_name, description, start_date, end_date, status) VALUES (?, ?, ?, ?, ?)',
       [project_name, description || null, start_date, end_date, status]
     );
 
-    // Insert required skills
     if (required_skills && required_skills.length > 0) {
       for (const skill of required_skills) {
         await pool.execute(
@@ -112,7 +85,6 @@ const createProject = async (req, res, next) => {
       }
     }
 
-    // Fetch the created project with required skills
     const [createdProjects] = await pool.execute(
       `SELECT 
         p.*,
@@ -131,7 +103,6 @@ const createProject = async (req, res, next) => {
       [result.insertId]
     );
 
-    // Format dates to YYYY-MM-DD
     const project = createdProjects[0];
     if (project) {
       project.start_date = formatDate(project.start_date);
@@ -161,19 +132,6 @@ const createProject = async (req, res, next) => {
   }
 };
 
-/**
- * Get All Projects
- *
- * Supports:
- * - Filtering by status
- * - Date range filtering (start_date, end_date)
- * - Search by project name
- * - Return projects with required skills
- *
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
 const getAllProjects = async (req, res, next) => {
   try {
     const { status, search, start_date, end_date, page, limit } = req.query;
@@ -283,19 +241,6 @@ const getAllProjects = async (req, res, next) => {
   }
 };
 
-/**
- * Get Single Project
- *
- * Steps:
- * 1. Get project by ID
- * 2. Include required skills (JOIN with project_required_skills and skills)
- * 3. Include allocated personnel (JOIN with project_allocations and personnel)
- * 4. Return 404 if not found
- *
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
 const getProjectById = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -378,20 +323,6 @@ const getProjectById = async (req, res, next) => {
   }
 };
 
-/**
- * Update Project
- *
- * Steps:
- * 1. Validate project exists
- * 2. Validate dates if changed (end_date must be after start_date)
- * 3. Validate status if changed
- * 4. Update fields
- * 5. Return updated project
- *
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
 const updateProject = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -577,18 +508,6 @@ const updateProject = async (req, res, next) => {
   }
 };
 
-/**
- * Delete Project
- *
- * Steps:
- * 1. Validate project exists
- * 2. Delete project (CASCADE handles related records)
- * 3. Return success message
- *
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
 const deleteProject = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -620,21 +539,6 @@ const deleteProject = async (req, res, next) => {
   }
 };
 
-/**
- * Add Required Skill to Project
- *
- * Steps:
- * 1. Validate project exists
- * 2. Validate skill exists
- * 3. Validate minimum_proficiency level
- * 4. Check if skill already required
- * 5. Insert into project_required_skills
- * 6. Return assignment details
- *
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
 const addRequiredSkillToProject = async (req, res, next) => {
   try {
     const { id } = req.params; // project_id
@@ -755,19 +659,6 @@ const addRequiredSkillToProject = async (req, res, next) => {
   }
 };
 
-/**
- * Update Required Skill
- *
- * Steps:
- * 1. Validate assignment exists
- * 2. Validate minimum_proficiency if provided
- * 3. Update minimum proficiency level
- * 4. Return updated assignment
- *
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
 const updateRequiredSkill = async (req, res, next) => {
   try {
     const { projectId, skillId } = req.params;
@@ -847,18 +738,6 @@ const updateRequiredSkill = async (req, res, next) => {
   }
 };
 
-/**
- * Remove Required Skill
- *
- * Steps:
- * 1. Validate assignment exists
- * 2. Delete from project_required_skills
- * 3. Return success message
- *
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
 const removeRequiredSkill = async (req, res, next) => {
   try {
     const { projectId, skillId } = req.params;

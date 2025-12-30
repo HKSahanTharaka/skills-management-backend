@@ -1,30 +1,6 @@
-/**
- * Allocation Controller
- *
- * This controller handles project allocation tracking.
- * Tracks which projects personnel are assigned to,
- * what percentage of their time is allocated, and when allocations start and end.
- */
-
 const { pool } = require('../config/database');
 const { checkAvailabilityConflicts } = require('./availability.controller');
 
-/**
- * Create Project Allocation
- *
- * Steps:
- * 1. Validate project exists
- * 2. Validate personnel exists
- * 3. Validate date range
- * 4. Check availability conflicts
- * 5. Validate allocation percentage
- * 6. Check total allocations don't exceed 100% for date range
- * 7. Insert into project_allocations
- *
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
 const createProjectAllocation = async (req, res, next) => {
   try {
     const {
@@ -36,7 +12,6 @@ const createProjectAllocation = async (req, res, next) => {
       role_in_project,
     } = req.body;
 
-    // Validate required fields
     if (!project_id || !personnel_id || !start_date || !end_date) {
       return res.status(400).json({
         success: false,
@@ -47,7 +22,6 @@ const createProjectAllocation = async (req, res, next) => {
       });
     }
 
-    // Validate allocation percentage
     if (allocation_percentage < 0 || allocation_percentage > 100) {
       return res.status(400).json({
         success: false,
@@ -57,7 +31,6 @@ const createProjectAllocation = async (req, res, next) => {
       });
     }
 
-    // Validate dates
     const startDateObj = new Date(start_date);
     const endDateObj = new Date(end_date);
 
@@ -65,7 +38,8 @@ const createProjectAllocation = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Invalid start_date format. Use YYYY-MM-DD format',
+          message: 'Invalid start date format.',
+          hint: 'Please use YYYY-MM-DD format (e.g., 2025-01-15)',
         },
       });
     }
@@ -74,7 +48,8 @@ const createProjectAllocation = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Invalid end_date format. Use YYYY-MM-DD format',
+          message: 'Invalid end date format.',
+          hint: 'Please use YYYY-MM-DD format (e.g., 2025-12-31)',
         },
       });
     }
@@ -83,12 +58,12 @@ const createProjectAllocation = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'end_date must be after start_date',
+          message: 'End date must be after start date.',
+          hint: 'The allocation period must span at least one day.',
         },
       });
     }
 
-    // Validate project exists
     const [projects] = await pool.execute(
       'SELECT id, project_name FROM projects WHERE id = ?',
       [project_id]
@@ -103,7 +78,6 @@ const createProjectAllocation = async (req, res, next) => {
       });
     }
 
-    // Validate personnel exists
     const [personnel] = await pool.execute(
       'SELECT id, name FROM personnel WHERE id = ?',
       [personnel_id]
@@ -118,7 +92,6 @@ const createProjectAllocation = async (req, res, next) => {
       });
     }
 
-    // Check availability conflicts
     const availabilityCheck = await checkAvailabilityConflicts(
       personnel_id,
       start_date,
@@ -130,13 +103,13 @@ const createProjectAllocation = async (req, res, next) => {
       return res.status(409).json({
         success: false,
         error: {
-          message: `Personnel is not available for the requested period. Average availability: ${availabilityCheck.averageAvailability}%, Required: ${allocation_percentage}%`,
+          message: `Cannot allocate: Personnel availability is ${availabilityCheck.averageAvailability}%, but ${allocation_percentage}% allocation requested.`,
+          hint: `The person is only ${availabilityCheck.averageAvailability}% available during this period. Either reduce the allocation percentage or update their availability.`,
           conflicts: availabilityCheck.conflicts,
         },
       });
     }
 
-    // Check if allocation already exists for this project and personnel
     const [existingAllocations] = await pool.execute(
       `SELECT id FROM project_allocations 
        WHERE project_id = ? 
@@ -151,12 +124,12 @@ const createProjectAllocation = async (req, res, next) => {
         success: false,
         error: {
           message:
-            'Allocation already exists for this project and personnel in the specified date range',
+            'This person is already allocated to this project during the specified dates.',
+          hint: 'Check the project team roster or update the existing allocation instead of creating a new one.',
         },
       });
     }
 
-    // Check total allocations don't exceed 100% for overlapping periods
     const [overlappingAllocations] = await pool.execute(
       `SELECT allocation_percentage, start_date, end_date 
        FROM project_allocations 
@@ -166,8 +139,6 @@ const createProjectAllocation = async (req, res, next) => {
       [personnel_id, end_date, start_date]
     );
 
-    // Calculate if adding this allocation would exceed 100%
-    // We need to check the maximum concurrent allocation at any point in time
     if (overlappingAllocations.length > 0) {
       let maxConcurrentAllocation = allocation_percentage;
 
@@ -188,13 +159,19 @@ const createProjectAllocation = async (req, res, next) => {
         return res.status(409).json({
           success: false,
           error: {
-            message: `Total allocation would exceed 100%. Current allocations (${maxConcurrentAllocation - allocation_percentage}%) plus requested allocation (${allocation_percentage}%) would total ${maxConcurrentAllocation}%.`,
+            message: `Over-allocation detected: This would result in ${maxConcurrentAllocation}% total allocation (exceeds 100% limit).`,
+            hint: `Current allocations: ${maxConcurrentAllocation - allocation_percentage}% + Requested: ${allocation_percentage}% = ${maxConcurrentAllocation}%. Consider reducing allocation percentage or adjusting dates.`,
+            details: {
+              currentAllocation: maxConcurrentAllocation - allocation_percentage,
+              requestedAllocation: allocation_percentage,
+              totalAllocation: maxConcurrentAllocation,
+              maxAllowed: 100,
+            },
           },
         });
       }
     }
 
-    // Insert into project_allocations
     const [result] = await pool.execute(
       'INSERT INTO project_allocations (project_id, personnel_id, allocation_percentage, start_date, end_date, role_in_project) VALUES (?, ?, ?, ?, ?, ?)',
       [
@@ -207,7 +184,6 @@ const createProjectAllocation = async (req, res, next) => {
       ]
     );
 
-    // Fetch the created allocation
     const [createdAllocation] = await pool.execute(
       `SELECT 
         pa.*,
@@ -230,19 +206,6 @@ const createProjectAllocation = async (req, res, next) => {
   }
 };
 
-/**
- * Get Personnel Utilization
- *
- * Steps:
- * 1. Validate personnel exists
- * 2. Query all allocations for personnel in date range (optional)
- * 3. Sum allocation percentages for overlapping periods
- * 4. Return utilization percentage and details
- *
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
 const getPersonnelUtilization = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -263,7 +226,6 @@ const getPersonnelUtilization = async (req, res, next) => {
       });
     }
 
-    // Build query for allocations
     let query = `SELECT 
       pa.*,
       p.project_name,
@@ -274,7 +236,6 @@ const getPersonnelUtilization = async (req, res, next) => {
 
     const params = [id];
 
-    // Filter by date range if provided
     if (start_date && end_date) {
       query += ' AND pa.start_date <= ? AND pa.end_date >= ?';
       params.push(end_date, start_date);
@@ -284,7 +245,6 @@ const getPersonnelUtilization = async (req, res, next) => {
 
     const [allocations] = await pool.execute(query, params);
 
-    // Calculate utilization percentage
     let utilizationPercentage = 0;
     let totalAllocatedDays = 0;
     let totalDays = 0;
@@ -295,7 +255,6 @@ const getPersonnelUtilization = async (req, res, next) => {
           (new Date(end_date) - new Date(start_date)) / (1000 * 60 * 60 * 24)
         ) + 1;
 
-      // Calculate weighted average utilization
       let weightedSum = 0;
 
       allocations.forEach((allocation) => {
@@ -316,14 +275,12 @@ const getPersonnelUtilization = async (req, res, next) => {
         utilizationPercentage = Math.round(weightedSum / totalDays);
       }
     } else {
-      // If no date range, calculate based on current and upcoming allocations
       const now = new Date();
       const relevantAllocations = allocations.filter(
         (a) => new Date(a.end_date) >= now
       );
 
       if (relevantAllocations.length > 0) {
-        // Find the period covering all relevant allocations
         const minStart = new Date(
           Math.min(...relevantAllocations.map((a) => new Date(a.start_date)))
         );
@@ -367,18 +324,6 @@ const getPersonnelUtilization = async (req, res, next) => {
   }
 };
 
-/**
- * Get Project Team
- *
- * Steps:
- * 1. Validate project exists
- * 2. Query all allocations for project
- * 3. Return assigned personnel with roles
- *
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
 const getProjectTeam = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -398,10 +343,10 @@ const getProjectTeam = async (req, res, next) => {
       });
     }
 
-    // Get all allocations for project with personnel details
     const [allocations] = await pool.execute(
       `SELECT 
         pa.id,
+        pa.project_id,
         pa.personnel_id,
         p.name as personnel_name,
         p.email as personnel_email,
@@ -412,9 +357,11 @@ const getProjectTeam = async (req, res, next) => {
         pa.end_date,
         pa.role_in_project,
         pa.created_at,
-        pa.updated_at
+        pa.updated_at,
+        proj.project_name
       FROM project_allocations pa
       INNER JOIN personnel p ON pa.personnel_id = p.id
+      INNER JOIN projects proj ON pa.project_id = proj.id
       WHERE pa.project_id = ?
       ORDER BY pa.created_at DESC`,
       [id]
@@ -432,21 +379,6 @@ const getProjectTeam = async (req, res, next) => {
   }
 };
 
-/**
- * Update Project Allocation
- *
- * Steps:
- * 1. Validate allocation exists
- * 2. Validate dates if changed
- * 3. Validate allocation percentage if changed
- * 4. Check availability conflicts if dates/percentage changed
- * 5. Check total allocations don't exceed 100% (excluding current allocation)
- * 6. Update allocation
- *
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
 const updateProjectAllocation = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -476,7 +408,6 @@ const updateProjectAllocation = async (req, res, next) => {
         ? allocation_percentage
         : existing.allocation_percentage;
 
-    // Validate allocation percentage if provided
     if (
       allocation_percentage !== undefined &&
       (allocation_percentage < 0 || allocation_percentage > 100)
@@ -489,7 +420,6 @@ const updateProjectAllocation = async (req, res, next) => {
       });
     }
 
-    // Validate dates if changed
     if (start_date || end_date) {
       const startDateObj = new Date(finalStartDate);
       const endDateObj = new Date(finalEndDate);
@@ -521,7 +451,6 @@ const updateProjectAllocation = async (req, res, next) => {
         });
       }
 
-      // Check availability conflicts (if dates or percentage changed)
       if (start_date || end_date || allocation_percentage !== undefined) {
         const availabilityCheck = await checkAvailabilityConflicts(
           existing.personnel_id,
@@ -542,7 +471,6 @@ const updateProjectAllocation = async (req, res, next) => {
       }
     }
 
-    // Check total allocations don't exceed 100% (excluding current allocation)
     if (start_date || end_date || allocation_percentage !== undefined) {
       const [overlappingAllocations] = await pool.execute(
         `SELECT allocation_percentage, start_date, end_date 
@@ -579,7 +507,6 @@ const updateProjectAllocation = async (req, res, next) => {
       }
     }
 
-    // Build update query dynamically
     const updateFields = [];
     const updateParams = [];
 
@@ -611,13 +538,11 @@ const updateProjectAllocation = async (req, res, next) => {
 
     updateParams.push(id);
 
-    // Execute update
     await pool.execute(
       `UPDATE project_allocations SET ${updateFields.join(', ')} WHERE id = ?`,
       updateParams
     );
 
-    // Fetch updated allocation
     const [updatedAllocation] = await pool.execute(
       `SELECT 
         pa.*,
@@ -640,17 +565,6 @@ const updateProjectAllocation = async (req, res, next) => {
   }
 };
 
-/**
- * Delete Project Allocation
- *
- * Steps:
- * 1. Validate allocation exists
- * 2. Delete from project_allocations
- *
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
 const deleteProjectAllocation = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -670,7 +584,6 @@ const deleteProjectAllocation = async (req, res, next) => {
       });
     }
 
-    // Delete allocation
     await pool.execute('DELETE FROM project_allocations WHERE id = ?', [id]);
 
     res.status(200).json({
@@ -682,13 +595,6 @@ const deleteProjectAllocation = async (req, res, next) => {
   }
 };
 
-/**
- * Get All Allocations for Personnel
- *
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
 const getPersonnelAllocations = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -708,7 +614,6 @@ const getPersonnelAllocations = async (req, res, next) => {
       });
     }
 
-    // Get all allocations for personnel
     const [allocations] = await pool.execute(
       `SELECT 
         pa.id,

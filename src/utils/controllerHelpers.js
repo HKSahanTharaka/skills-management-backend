@@ -1,10 +1,5 @@
 const { pool } = require('../config/database');
 
-/**
- * Get the user_id for a personnel record
- * @param {number} personnelId - Personnel ID
- * @returns {Promise<number|null>} - User ID or null if not found
- */
 const getPersonnelUserId = async (personnelId) => {
   try {
     const [rows] = await pool.execute(
@@ -18,32 +13,17 @@ const getPersonnelUserId = async (personnelId) => {
   }
 };
 
-/**
- * Check if user can access personnel record
- * Admin & Manager can access anyone, User can only access own
- * @param {Object} user - Current user from req.user
- * @param {number} personnelId - Personnel ID to access
- * @returns {Promise<boolean>}
- */
 const canAccessPersonnel = async (user, personnelId) => {
   if (!user) return false;
   
-  // Admin and Manager can access anyone
   if (user.role === 'admin' || user.role === 'manager') {
     return true;
   }
   
-  // User can only access own record
   const personnelUserId = await getPersonnelUserId(personnelId);
   return personnelUserId === user.id;
 };
 
-/**
- * Check if user is assigned to a project
- * @param {number} userId - User ID
- * @param {number} projectId - Project ID
- * @returns {Promise<boolean>}
- */
 const isUserAssignedToProject = async (userId, projectId) => {
   try {
     const [rows] = await pool.execute(
@@ -60,11 +40,6 @@ const isUserAssignedToProject = async (userId, projectId) => {
   }
 };
 
-/**
- * Get personnel_id for a user
- * @param {number} userId - User ID
- * @returns {Promise<number|null>}
- */
 const getPersonnelIdForUser = async (userId) => {
   try {
     const [rows] = await pool.execute(

@@ -1,18 +1,7 @@
--- ============================================
--- COMPLETE SETUP FOR SKILLS MANAGEMENT SYSTEM
--- Includes schema creation and comprehensive seed data
--- ============================================
-
--- Create Database
 DROP DATABASE IF EXISTS skills_management;
 CREATE DATABASE skills_management;
 USE skills_management;
 
--- ============================================
--- SCHEMA DEFINITION
--- ============================================
-
--- Users table (for authentication)
 CREATE TABLE users (
     id INT PRIMARY KEY AUTO_INCREMENT,
     email VARCHAR(255) UNIQUE NOT NULL,
@@ -131,35 +120,14 @@ CREATE TABLE project_allocations (
     INDEX idx_dates (start_date, end_date)
 );
 
--- ============================================
--- SEED DATA
--- ============================================
-
--- ============================================
--- 1. USERS (Authentication Accounts)
--- Password for all users: "password123" (hashed with bcrypt)
--- Admin accounts are automatically approved
--- Manager accounts can have different approval statuses for testing
--- ============================================
 INSERT INTO users (email, password, role, approval_status) VALUES
--- Admin accounts (automatically approved)
 ('admin@techcorp.com', '$2a$10$rZ5jLZPJ5w9P5qPZ5w9P5uEjP5qPZ5w9P5qPZ5w9P5qPZ5w9P5qPZ5', 'admin', 'approved'),
 ('john.smith@techcorp.com', '$2a$10$rZ5jLZPJ5w9P5qPZ5w9P5uEjP5qPZ5w9P5qPZ5w9P5qPZ5w9P5qPZ5', 'admin', 'approved'),
-
--- Manager accounts (approved - can login immediately)
 ('manager@techcorp.com', '$2a$10$rZ5jLZPJ5w9P5qPZ5w9P5uEjP5qPZ5w9P5qPZ5w9P5qPZ5w9P5qPZ5', 'manager', 'approved'),
 ('sarah.johnson@techcorp.com', '$2a$10$rZ5jLZPJ5w9P5qPZ5w9P5uEjP5qPZ5w9P5qPZ5w9P5qPZ5w9P5qPZ5', 'manager', 'approved'),
 ('michael.chen@techcorp.com', '$2a$10$rZ5jLZPJ5w9P5qPZ5w9P5uEjP5qPZ5w9P5qPZ5w9P5qPZ5w9P5qPZ5', 'manager', 'approved'),
-
--- Manager account (pending - for testing approval workflow)
 ('emily.davis@techcorp.com', '$2a$10$rZ5jLZPJ5w9P5qPZ5w9P5uEjP5qPZ5w9P5qPZ5w9P5qPZ5w9P5qPZ5', 'manager', 'pending');
 
--- ============================================
--- 2. SKILLS DATABASE
--- Comprehensive list across all categories
--- ============================================
-
--- Programming Languages
 INSERT INTO skills (skill_name, category, description) VALUES
 ('JavaScript', 'Programming Language', 'Dynamic programming language for web development'),
 ('TypeScript', 'Programming Language', 'Typed superset of JavaScript for large-scale applications'),
@@ -174,7 +142,6 @@ INSERT INTO skills (skill_name, category, description) VALUES
 ('Rust', 'Programming Language', 'Systems programming language focused on safety and performance'),
 ('SQL', 'Programming Language', 'Database query and manipulation language');
 
--- Frameworks & Libraries
 INSERT INTO skills (skill_name, category, description) VALUES
 ('React', 'Framework', 'JavaScript library for building user interfaces'),
 ('Angular', 'Framework', 'TypeScript-based web application framework by Google'),
@@ -191,7 +158,6 @@ INSERT INTO skills (skill_name, category, description) VALUES
 ('Next.js', 'Framework', 'React framework for production'),
 ('Svelte', 'Framework', 'Reactive web framework');
 
--- Tools & Technologies
 INSERT INTO skills (skill_name, category, description) VALUES
 ('Docker', 'Tool', 'Containerization platform for application deployment'),
 ('Kubernetes', 'Tool', 'Container orchestration platform'),
@@ -215,7 +181,6 @@ INSERT INTO skills (skill_name, category, description) VALUES
 ('Figma', 'Tool', 'Collaborative UI/UX design tool'),
 ('Postman', 'Tool', 'API development and testing platform');
 
--- Soft Skills
 INSERT INTO skills (skill_name, category, description) VALUES
 ('Leadership', 'Soft Skill', 'Ability to lead and inspire teams'),
 ('Communication', 'Soft Skill', 'Effective verbal and written communication'),
@@ -228,7 +193,6 @@ INSERT INTO skills (skill_name, category, description) VALUES
 ('Critical Thinking', 'Soft Skill', 'Analyzing situations and making informed decisions'),
 ('Stakeholder Management', 'Soft Skill', 'Managing expectations and communications with stakeholders');
 
--- Other/Specialized
 INSERT INTO skills (skill_name, category, description) VALUES
 ('Machine Learning', 'Other', 'AI and ML model development'),
 ('Data Science', 'Other', 'Data analysis and statistical modeling'),
@@ -238,15 +202,9 @@ INSERT INTO skills (skill_name, category, description) VALUES
 ('Mobile Development', 'Other', 'iOS and Android app development'),
 ('Blockchain', 'Other', 'Distributed ledger technology');
 
--- ============================================
--- 3. PERSONNEL
--- Diverse team with varied experience levels
--- ============================================
 INSERT INTO personnel (name, email, role_title, experience_level, bio, user_id) VALUES
--- Senior Level (7 people)
 ('John Smith', 'john.smith@techcorp.com', 'Chief Technology Officer', 'Senior', 
  'Visionary technology leader with 15+ years of experience in software architecture and team leadership. Expert in cloud infrastructure and enterprise solutions.', 2),
-
 ('Sarah Johnson', 'sarah.johnson@techcorp.com', 'Senior Full Stack Developer', 'Senior', 
  'Passionate full-stack engineer with 10+ years building scalable web applications. Specializes in React, Node.js, and cloud architecture.', 4),
 
@@ -264,8 +222,6 @@ INSERT INTO personnel (name, email, role_title, experience_level, bio, user_id) 
 
 ('David Thompson', 'david.thompson@techcorp.com', 'Technical Lead', 'Senior', 
  'Technical leader with strong background in Java, Spring Boot, and distributed systems. 10 years of development and leadership.', NULL),
-
--- Mid-Level (8 people)
 ('Lisa Anderson', 'lisa.anderson@techcorp.com', 'Full Stack Developer', 'Mid-Level', 
  'Full-stack developer with 5 years experience building modern web applications using JavaScript frameworks and REST APIs.', NULL),
 
@@ -289,8 +245,6 @@ INSERT INTO personnel (name, email, role_title, experience_level, bio, user_id) 
 
 ('Ryan Clark', 'ryan.clark@techcorp.com', 'Full Stack Developer', 'Mid-Level', 
  'Versatile developer comfortable with both frontend and backend technologies. 5 years building web applications.', NULL),
-
--- Junior Level (5 people)
 ('Sophia Rodriguez', 'sophia.rodriguez@techcorp.com', 'Junior Frontend Developer', 'Junior', 
  'Enthusiastic frontend developer eager to learn and grow. 2 years experience with HTML, CSS, JavaScript, and React.', NULL),
 
@@ -306,12 +260,6 @@ INSERT INTO personnel (name, email, role_title, experience_level, bio, user_id) 
 ('Emma Thomas', 'emma.thomas@techcorp.com', 'Junior Developer', 'Junior', 
  'Recent bootcamp graduate with strong foundation in web development. Eager to contribute and learn from experienced developers.', NULL);
 
--- ============================================
--- 4. PERSONNEL SKILLS
--- Mapping skills to personnel with realistic proficiency levels
--- ============================================
-
--- John Smith (CTO) - Senior, Leadership, Architecture
 INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_of_experience) VALUES
 (1, (SELECT id FROM skills WHERE skill_name = 'Leadership'), 'Expert', 15.0),
 (1, (SELECT id FROM skills WHERE skill_name = 'Project Management'), 'Expert', 15.0),
@@ -323,7 +271,6 @@ INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_o
 (1, (SELECT id FROM skills WHERE skill_name = 'Python'), 'Advanced', 10.0),
 (1, (SELECT id FROM skills WHERE skill_name = 'Agile Methodology'), 'Expert', 12.0);
 
--- Sarah Johnson - Senior Full Stack Developer
 INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_of_experience) VALUES
 (2, (SELECT id FROM skills WHERE skill_name = 'JavaScript'), 'Expert', 10.0),
 (2, (SELECT id FROM skills WHERE skill_name = 'TypeScript'), 'Expert', 7.0),
@@ -340,7 +287,6 @@ INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_o
 (2, (SELECT id FROM skills WHERE skill_name = 'Agile Methodology'), 'Advanced', 8.0),
 (2, (SELECT id FROM skills WHERE skill_name = 'Mentoring'), 'Advanced', 5.0);
 
--- Michael Chen - Lead DevOps Engineer
 INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_of_experience) VALUES
 (3, (SELECT id FROM skills WHERE skill_name = 'DevOps'), 'Expert', 12.0),
 (3, (SELECT id FROM skills WHERE skill_name = 'Docker'), 'Expert', 10.0),
@@ -355,7 +301,6 @@ INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_o
 (3, (SELECT id FROM skills WHERE skill_name = 'Git'), 'Expert', 12.0),
 (3, (SELECT id FROM skills WHERE skill_name = 'Leadership'), 'Advanced', 5.0);
 
--- Emily Davis - Senior Backend Developer
 INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_of_experience) VALUES
 (4, (SELECT id FROM skills WHERE skill_name = 'Python'), 'Expert', 9.0),
 (4, (SELECT id FROM skills WHERE skill_name = 'Django'), 'Expert', 8.0),
@@ -371,7 +316,6 @@ INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_o
 (4, (SELECT id FROM skills WHERE skill_name = 'Git'), 'Expert', 9.0),
 (4, (SELECT id FROM skills WHERE skill_name = 'Problem Solving'), 'Expert', 9.0);
 
--- Robert Wilson - Solutions Architect
 INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_of_experience) VALUES
 (5, (SELECT id FROM skills WHERE skill_name = 'AWS'), 'Expert', 11.0),
 (5, (SELECT id FROM skills WHERE skill_name = 'Azure'), 'Expert', 9.0),
@@ -388,7 +332,6 @@ INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_o
 (5, (SELECT id FROM skills WHERE skill_name = 'Leadership'), 'Advanced', 7.0),
 (5, (SELECT id FROM skills WHERE skill_name = 'Stakeholder Management'), 'Expert', 10.0);
 
--- Jennifer Martinez - Senior Frontend Developer
 INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_of_experience) VALUES
 (6, (SELECT id FROM skills WHERE skill_name = 'JavaScript'), 'Expert', 8.0),
 (6, (SELECT id FROM skills WHERE skill_name = 'TypeScript'), 'Expert', 6.0),
@@ -403,7 +346,6 @@ INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_o
 (6, (SELECT id FROM skills WHERE skill_name = 'GraphQL'), 'Advanced', 3.0),
 (6, (SELECT id FROM skills WHERE skill_name = 'Agile Methodology'), 'Advanced', 6.0);
 
--- David Thompson - Technical Lead
 INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_of_experience) VALUES
 (7, (SELECT id FROM skills WHERE skill_name = 'Java'), 'Expert', 10.0),
 (7, (SELECT id FROM skills WHERE skill_name = 'Spring Boot'), 'Expert', 8.0),
@@ -421,7 +363,6 @@ INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_o
 (7, (SELECT id FROM skills WHERE skill_name = 'Mentoring'), 'Advanced', 5.0),
 (7, (SELECT id FROM skills WHERE skill_name = 'Agile Methodology'), 'Advanced', 7.0);
 
--- Lisa Anderson - Full Stack Developer (Mid-Level)
 INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_of_experience) VALUES
 (8, (SELECT id FROM skills WHERE skill_name = 'JavaScript'), 'Advanced', 5.0),
 (8, (SELECT id FROM skills WHERE skill_name = 'TypeScript'), 'Intermediate', 3.0),
@@ -435,7 +376,6 @@ INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_o
 (8, (SELECT id FROM skills WHERE skill_name = 'Docker'), 'Intermediate', 2.0),
 (8, (SELECT id FROM skills WHERE skill_name = 'Agile Methodology'), 'Intermediate', 3.0);
 
--- James Taylor - Backend Developer (Mid-Level)
 INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_of_experience) VALUES
 (9, (SELECT id FROM skills WHERE skill_name = 'Python'), 'Advanced', 4.0),
 (9, (SELECT id FROM skills WHERE skill_name = 'Django'), 'Advanced', 3.5),
@@ -447,7 +387,6 @@ INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_o
 (9, (SELECT id FROM skills WHERE skill_name = 'Git'), 'Advanced', 4.0),
 (9, (SELECT id FROM skills WHERE skill_name = 'SQL'), 'Advanced', 4.0);
 
--- Maria Garcia - Frontend Developer (Mid-Level)
 INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_of_experience) VALUES
 (10, (SELECT id FROM skills WHERE skill_name = 'JavaScript'), 'Advanced', 4.0),
 (10, (SELECT id FROM skills WHERE skill_name = 'TypeScript'), 'Intermediate', 2.5),
@@ -458,7 +397,6 @@ INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_o
 (10, (SELECT id FROM skills WHERE skill_name = 'Git'), 'Advanced', 4.0),
 (10, (SELECT id FROM skills WHERE skill_name = 'REST API'), 'Intermediate', 3.0);
 
--- Christopher Lee - DevOps Engineer (Mid-Level)
 INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_of_experience) VALUES
 (11, (SELECT id FROM skills WHERE skill_name = 'DevOps'), 'Advanced', 5.0),
 (11, (SELECT id FROM skills WHERE skill_name = 'Docker'), 'Advanced', 5.0),
@@ -469,7 +407,6 @@ INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_o
 (11, (SELECT id FROM skills WHERE skill_name = 'Python'), 'Intermediate', 3.0),
 (11, (SELECT id FROM skills WHERE skill_name = 'Git'), 'Advanced', 5.0);
 
--- Amanda White - Data Engineer (Mid-Level)
 INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_of_experience) VALUES
 (12, (SELECT id FROM skills WHERE skill_name = 'Python'), 'Advanced', 4.0),
 (12, (SELECT id FROM skills WHERE skill_name = 'Data Science'), 'Advanced', 4.0),
@@ -481,7 +418,6 @@ INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_o
 (12, (SELECT id FROM skills WHERE skill_name = 'Docker'), 'Intermediate', 2.0),
 (12, (SELECT id FROM skills WHERE skill_name = 'Git'), 'Advanced', 4.0);
 
--- Daniel Brown - Mobile Developer (Mid-Level)
 INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_of_experience) VALUES
 (13, (SELECT id FROM skills WHERE skill_name = 'Mobile Development'), 'Advanced', 5.0),
 (13, (SELECT id FROM skills WHERE skill_name = 'Swift'), 'Advanced', 4.0),
@@ -492,7 +428,6 @@ INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_o
 (13, (SELECT id FROM skills WHERE skill_name = 'Git'), 'Advanced', 5.0),
 (13, (SELECT id FROM skills WHERE skill_name = 'UI/UX Design'), 'Intermediate', 3.0);
 
--- Jessica Harris - QA Engineer (Mid-Level)
 INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_of_experience) VALUES
 (14, (SELECT id FROM skills WHERE skill_name = 'JavaScript'), 'Intermediate', 3.0),
 (14, (SELECT id FROM skills WHERE skill_name = 'Python'), 'Intermediate', 3.5),
@@ -503,7 +438,6 @@ INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_o
 (14, (SELECT id FROM skills WHERE skill_name = 'JIRA'), 'Advanced', 4.0),
 (14, (SELECT id FROM skills WHERE skill_name = 'Agile Methodology'), 'Advanced', 4.0);
 
--- Ryan Clark - Full Stack Developer (Mid-Level)
 INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_of_experience) VALUES
 (15, (SELECT id FROM skills WHERE skill_name = 'JavaScript'), 'Advanced', 5.0),
 (15, (SELECT id FROM skills WHERE skill_name = 'TypeScript'), 'Intermediate', 3.0),
@@ -518,7 +452,6 @@ INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_o
 (15, (SELECT id FROM skills WHERE skill_name = 'Docker'), 'Intermediate', 2.0),
 (15, (SELECT id FROM skills WHERE skill_name = 'Git'), 'Advanced', 5.0);
 
--- Sophia Rodriguez - Junior Frontend Developer
 INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_of_experience) VALUES
 (16, (SELECT id FROM skills WHERE skill_name = 'JavaScript'), 'Intermediate', 2.0),
 (16, (SELECT id FROM skills WHERE skill_name = 'React'), 'Intermediate', 1.5),
@@ -527,7 +460,6 @@ INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_o
 (16, (SELECT id FROM skills WHERE skill_name = 'REST API'), 'Beginner', 1.5),
 (16, (SELECT id FROM skills WHERE skill_name = 'UI/UX Design'), 'Beginner', 1.0);
 
--- Ethan Miller - Junior Backend Developer
 INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_of_experience) VALUES
 (17, (SELECT id FROM skills WHERE skill_name = 'Python'), 'Intermediate', 1.5),
 (17, (SELECT id FROM skills WHERE skill_name = 'Django'), 'Beginner', 1.0),
@@ -536,7 +468,6 @@ INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_o
 (17, (SELECT id FROM skills WHERE skill_name = 'REST API'), 'Intermediate', 1.5),
 (17, (SELECT id FROM skills WHERE skill_name = 'Git'), 'Intermediate', 1.5);
 
--- Olivia Moore - Junior Full Stack Developer
 INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_of_experience) VALUES
 (18, (SELECT id FROM skills WHERE skill_name = 'JavaScript'), 'Intermediate', 1.0),
 (18, (SELECT id FROM skills WHERE skill_name = 'React'), 'Beginner', 1.0),
@@ -545,7 +476,6 @@ INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_o
 (18, (SELECT id FROM skills WHERE skill_name = 'MongoDB'), 'Beginner', 0.5),
 (18, (SELECT id FROM skills WHERE skill_name = 'Git'), 'Intermediate', 1.0);
 
--- William Jackson - Junior DevOps Engineer
 INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_of_experience) VALUES
 (19, (SELECT id FROM skills WHERE skill_name = 'Docker'), 'Beginner', 1.0),
 (19, (SELECT id FROM skills WHERE skill_name = 'AWS'), 'Beginner', 0.5),
@@ -553,19 +483,13 @@ INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_o
 (19, (SELECT id FROM skills WHERE skill_name = 'Python'), 'Beginner', 1.0),
 (19, (SELECT id FROM skills WHERE skill_name = 'Git'), 'Intermediate', 1.0);
 
--- Emma Thomas - Junior Developer
 INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_of_experience) VALUES
 (20, (SELECT id FROM skills WHERE skill_name = 'JavaScript'), 'Beginner', 1.0),
 (20, (SELECT id FROM skills WHERE skill_name = 'React'), 'Beginner', 0.5),
 (20, (SELECT id FROM skills WHERE skill_name = 'Node.js'), 'Beginner', 0.5),
 (20, (SELECT id FROM skills WHERE skill_name = 'Git'), 'Beginner', 1.0);
 
--- ============================================
--- 5. PROJECTS
--- Diverse projects demonstrating various scenarios
--- ============================================
 INSERT INTO projects (project_name, description, start_date, end_date, status) VALUES
--- Active Projects
 ('E-Commerce Platform Redesign', 
  'Complete overhaul of the company e-commerce platform with modern React frontend, Node.js backend, and cloud deployment. Focus on performance, user experience, and scalability.',
  '2025-01-15', '2025-08-30', 'Active'),
@@ -577,8 +501,6 @@ INSERT INTO projects (project_name, description, start_date, end_date, status) V
 ('Cloud Migration Initiative', 
  'Migrate legacy on-premise systems to AWS cloud infrastructure. Includes containerization, orchestration, and CI/CD pipeline setup.',
  '2025-01-01', '2025-06-30', 'Active'),
-
--- Planning Projects
 ('AI-Powered Analytics Dashboard', 
  'Machine learning-based analytics dashboard for business intelligence. Real-time data processing and visualization with predictive insights.',
  '2025-03-01', '2025-12-31', 'Planning'),
@@ -590,8 +512,6 @@ INSERT INTO projects (project_name, description, start_date, end_date, status) V
 ('Customer Portal Enhancement', 
  'Enhance customer-facing portal with new features including live chat, document management, and personalized dashboards.',
  '2025-03-15', '2025-09-30', 'Planning'),
-
--- Completed Projects
 ('Payment Gateway Integration', 
  'Successfully integrated multiple payment providers with robust error handling and transaction monitoring.',
  '2024-06-01', '2024-12-15', 'Completed'),
@@ -599,18 +519,10 @@ INSERT INTO projects (project_name, description, start_date, end_date, status) V
 ('Security Audit and Hardening', 
  'Comprehensive security audit and implementation of security best practices across all systems.',
  '2024-08-01', '2024-11-30', 'Completed'),
-
--- On Hold Project
 ('Blockchain Integration POC', 
  'Proof of concept for blockchain-based transaction verification. On hold pending stakeholder approval.',
  '2025-02-15', '2025-08-31', 'On Hold');
 
--- ============================================
--- 6. PROJECT REQUIRED SKILLS
--- Skills needed for each project
--- ============================================
-
--- E-Commerce Platform Redesign (Project 1)
 INSERT INTO project_required_skills (project_id, skill_id, minimum_proficiency) VALUES
 (1, (SELECT id FROM skills WHERE skill_name = 'React'), 'Advanced'),
 (1, (SELECT id FROM skills WHERE skill_name = 'TypeScript'), 'Intermediate'),
@@ -623,7 +535,6 @@ INSERT INTO project_required_skills (project_id, skill_id, minimum_proficiency) 
 (1, (SELECT id FROM skills WHERE skill_name = 'UI/UX Design'), 'Intermediate'),
 (1, (SELECT id FROM skills WHERE skill_name = 'Agile Methodology'), 'Intermediate');
 
--- Mobile Banking App (Project 2)
 INSERT INTO project_required_skills (project_id, skill_id, minimum_proficiency) VALUES
 (2, (SELECT id FROM skills WHERE skill_name = 'Mobile Development'), 'Advanced'),
 (2, (SELECT id FROM skills WHERE skill_name = 'Swift'), 'Advanced'),
@@ -633,7 +544,6 @@ INSERT INTO project_required_skills (project_id, skill_id, minimum_proficiency) 
 (2, (SELECT id FROM skills WHERE skill_name = 'UI/UX Design'), 'Intermediate'),
 (2, (SELECT id FROM skills WHERE skill_name = 'PostgreSQL'), 'Intermediate');
 
--- Cloud Migration Initiative (Project 3)
 INSERT INTO project_required_skills (project_id, skill_id, minimum_proficiency) VALUES
 (3, (SELECT id FROM skills WHERE skill_name = 'AWS'), 'Expert'),
 (3, (SELECT id FROM skills WHERE skill_name = 'Docker'), 'Advanced'),
@@ -644,7 +554,6 @@ INSERT INTO project_required_skills (project_id, skill_id, minimum_proficiency) 
 (3, (SELECT id FROM skills WHERE skill_name = 'Python'), 'Intermediate'),
 (3, (SELECT id FROM skills WHERE skill_name = 'Microservices'), 'Intermediate');
 
--- AI-Powered Analytics Dashboard (Project 4)
 INSERT INTO project_required_skills (project_id, skill_id, minimum_proficiency) VALUES
 (4, (SELECT id FROM skills WHERE skill_name = 'Python'), 'Advanced'),
 (4, (SELECT id FROM skills WHERE skill_name = 'Machine Learning'), 'Advanced'),
@@ -654,7 +563,6 @@ INSERT INTO project_required_skills (project_id, skill_id, minimum_proficiency) 
 (4, (SELECT id FROM skills WHERE skill_name = 'FastAPI'), 'Intermediate'),
 (4, (SELECT id FROM skills WHERE skill_name = 'Docker'), 'Intermediate');
 
--- Microservices Architecture Refactoring (Project 5)
 INSERT INTO project_required_skills (project_id, skill_id, minimum_proficiency) VALUES
 (5, (SELECT id FROM skills WHERE skill_name = 'Java'), 'Expert'),
 (5, (SELECT id FROM skills WHERE skill_name = 'Spring Boot'), 'Expert'),
@@ -664,7 +572,6 @@ INSERT INTO project_required_skills (project_id, skill_id, minimum_proficiency) 
 (5, (SELECT id FROM skills WHERE skill_name = 'PostgreSQL'), 'Advanced'),
 (5, (SELECT id FROM skills WHERE skill_name = 'MongoDB'), 'Intermediate');
 
--- Customer Portal Enhancement (Project 6)
 INSERT INTO project_required_skills (project_id, skill_id, minimum_proficiency) VALUES
 (6, (SELECT id FROM skills WHERE skill_name = 'React'), 'Advanced'),
 (6, (SELECT id FROM skills WHERE skill_name = 'TypeScript'), 'Intermediate'),
@@ -673,7 +580,6 @@ INSERT INTO project_required_skills (project_id, skill_id, minimum_proficiency) 
 (6, (SELECT id FROM skills WHERE skill_name = 'MongoDB'), 'Intermediate'),
 (6, (SELECT id FROM skills WHERE skill_name = 'UI/UX Design'), 'Advanced');
 
--- Payment Gateway Integration (Project 7 - Completed)
 INSERT INTO project_required_skills (project_id, skill_id, minimum_proficiency) VALUES
 (7, (SELECT id FROM skills WHERE skill_name = 'Node.js'), 'Advanced'),
 (7, (SELECT id FROM skills WHERE skill_name = 'Python'), 'Advanced'),
@@ -681,7 +587,6 @@ INSERT INTO project_required_skills (project_id, skill_id, minimum_proficiency) 
 (7, (SELECT id FROM skills WHERE skill_name = 'PostgreSQL'), 'Advanced'),
 (7, (SELECT id FROM skills WHERE skill_name = 'Cybersecurity'), 'Advanced');
 
--- Security Audit and Hardening (Project 8 - Completed)
 INSERT INTO project_required_skills (project_id, skill_id, minimum_proficiency) VALUES
 (8, (SELECT id FROM skills WHERE skill_name = 'Cybersecurity'), 'Expert'),
 (8, (SELECT id FROM skills WHERE skill_name = 'DevOps'), 'Advanced'),
@@ -689,19 +594,12 @@ INSERT INTO project_required_skills (project_id, skill_id, minimum_proficiency) 
 (8, (SELECT id FROM skills WHERE skill_name = 'Python'), 'Intermediate'),
 (8, (SELECT id FROM skills WHERE skill_name = 'Java'), 'Intermediate');
 
--- Blockchain Integration POC (Project 9 - On Hold)
 INSERT INTO project_required_skills (project_id, skill_id, minimum_proficiency) VALUES
 (9, (SELECT id FROM skills WHERE skill_name = 'Blockchain'), 'Advanced'),
 (9, (SELECT id FROM skills WHERE skill_name = 'JavaScript'), 'Advanced'),
 (9, (SELECT id FROM skills WHERE skill_name = 'Node.js'), 'Advanced'),
 (9, (SELECT id FROM skills WHERE skill_name = 'Cybersecurity'), 'Intermediate');
 
--- ============================================
--- 7. PROJECT ALLOCATIONS
--- Who's assigned to which active projects
--- ============================================
-
--- E-Commerce Platform Redesign Team
 INSERT INTO project_allocations (project_id, personnel_id, allocation_percentage, start_date, end_date, role_in_project) VALUES
 (1, 2, 80, '2025-01-15', '2025-08-30', 'Tech Lead'),
 (1, 8, 100, '2025-01-15', '2025-08-30', 'Full Stack Developer'),
@@ -709,35 +607,25 @@ INSERT INTO project_allocations (project_id, personnel_id, allocation_percentage
 (1, 16, 100, '2025-01-20', '2025-08-30', 'Junior Frontend Developer'),
 (1, 9, 60, '2025-02-01', '2025-08-30', 'Backend Support');
 
--- Mobile Banking App Team
 INSERT INTO project_allocations (project_id, personnel_id, allocation_percentage, start_date, end_date, role_in_project) VALUES
 (2, 13, 100, '2025-02-01', '2025-10-31', 'Lead Mobile Developer'),
 (2, 6, 50, '2025-02-01', '2025-06-30', 'UI/UX Consultant'),
 (2, 4, 40, '2025-02-15', '2025-10-31', 'Backend API Developer');
 
--- Cloud Migration Initiative Team
 INSERT INTO project_allocations (project_id, personnel_id, allocation_percentage, start_date, end_date, role_in_project) VALUES
 (3, 3, 90, '2025-01-01', '2025-06-30', 'DevOps Lead'),
 (3, 11, 100, '2025-01-01', '2025-06-30', 'DevOps Engineer'),
 (3, 5, 50, '2025-01-15', '2025-05-31', 'Architecture Consultant'),
 (3, 19, 80, '2025-01-15', '2025-06-30', 'Junior DevOps Engineer');
 
--- Payment Gateway Integration (Completed - showing historical allocation)
 INSERT INTO project_allocations (project_id, personnel_id, allocation_percentage, start_date, end_date, role_in_project) VALUES
 (7, 4, 70, '2024-06-01', '2024-12-15', 'Backend Lead'),
 (7, 2, 50, '2024-06-01', '2024-10-15', 'Full Stack Developer');
 
--- Security Audit (Completed - showing historical allocation)
 INSERT INTO project_allocations (project_id, personnel_id, allocation_percentage, start_date, end_date, role_in_project) VALUES
 (8, 1, 30, '2024-08-01', '2024-11-30', 'Security Oversight'),
 (8, 3, 60, '2024-08-01', '2024-11-30', 'Infrastructure Security');
 
--- ============================================
--- 8. PERSONNEL AVAILABILITY
--- Current and future availability for resource planning
--- ============================================
-
--- Currently fully available
 INSERT INTO personnel_availability (personnel_id, start_date, end_date, availability_percentage, notes) VALUES
 (1, '2025-01-01', '2025-12-31', 70, 'CTO - Reserved time for strategic initiatives'),
 (7, '2025-01-01', '2025-06-30', 100, 'Available for new projects'),
@@ -748,7 +636,6 @@ INSERT INTO personnel_availability (personnel_id, start_date, end_date, availabi
 (18, '2025-01-01', '2025-12-31', 100, 'Available for any projects'),
 (20, '2025-01-01', '2025-12-31', 100, 'Available for junior-level tasks');
 
--- Partially available (already on projects)
 INSERT INTO personnel_availability (personnel_id, start_date, end_date, availability_percentage, notes) VALUES
 (2, '2025-01-15', '2025-08-30', 20, 'Allocated to E-Commerce project - minimal capacity'),
 (3, '2025-01-01', '2025-06-30', 10, 'Leading Cloud Migration - very limited availability'),
@@ -763,16 +650,11 @@ INSERT INTO personnel_availability (personnel_id, start_date, end_date, availabi
 (16, '2025-01-20', '2025-08-30', 0, 'Fully allocated to E-Commerce project'),
 (19, '2025-01-15', '2025-06-30', 20, 'Supporting Cloud Migration');
 
--- Upcoming leave/reduced availability
 INSERT INTO personnel_availability (personnel_id, start_date, end_date, availability_percentage, notes) VALUES
 (2, '2025-07-01', '2025-07-14', 0, 'Vacation - Summer break'),
 (6, '2025-08-01', '2025-08-15', 0, 'Vacation - Family trip'),
 (12, '2025-06-15', '2025-06-30', 50, 'Conference attendance and training'),
 (15, '2025-05-01', '2025-05-15', 0, 'Vacation - Spring break');
-
--- ============================================
--- DATA SUMMARY
--- ============================================
 
 SELECT '=== SEED DATA SUMMARY ===' AS '';
 SELECT COUNT(*) AS 'Total Users' FROM users;
@@ -799,14 +681,8 @@ FROM (
     GROUP BY personnel_id
 ) AS ps;
 
--- ============================================
--- DEMONSTRATION QUERIES
--- Example queries to showcase system capabilities
--- ============================================
-
 SELECT '=== SAMPLE QUERIES TO TEST SYSTEM ===' AS '';
 
--- Find senior React developers
 SELECT '1. Find Senior React Developers:' AS '';
 SELECT p.name, p.role_title, ps.proficiency_level, ps.years_of_experience
 FROM personnel p
@@ -818,7 +694,6 @@ ORDER BY ps.proficiency_level DESC, ps.years_of_experience DESC;
 
 SELECT '---' AS '';
 
--- Show project allocation summary
 SELECT '2. Current Project Allocations:' AS '';
 SELECT 
     proj.project_name,
@@ -834,7 +709,6 @@ ORDER BY proj.project_name, pa.allocation_percentage DESC;
 
 SELECT '---' AS '';
 
--- Available personnel with high availability
 SELECT '3. Currently Available Personnel (>50% capacity):' AS '';
 SELECT 
     p.name,

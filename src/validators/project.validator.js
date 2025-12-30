@@ -1,3 +1,1 @@
-module.exports = {
-  // Project validation functions will be added here
-};
+module.exports = {};

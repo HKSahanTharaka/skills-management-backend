@@ -1,9 +1,3 @@
-/**
- * Availability Routes
- *
- * These routes handle personnel availability tracking.
- */
-
 const express = require('express');
 const router = express.Router();
 const {
@@ -13,17 +7,21 @@ const {
   deletePersonnelAvailability,
 } = require('../controllers/availability.controller');
 const { authenticateToken } = require('../middleware/auth');
+const { availabilityPermissions, checkPermission } = require('../utils/permissions');
 
-// GET /api/availability/:personnelId - Get availability periods for a personnel
 router.get('/:personnelId', authenticateToken, getPersonnelAvailability);
-
-// POST /api/availability - Set an availability period for personnel
 router.post('/', authenticateToken, setPersonnelAvailability);
-
-// PUT /api/availability/:id - Update an availability period
 router.put('/:id', authenticateToken, updatePersonnelAvailability);
-
-// DELETE /api/availability/:id - Delete an availability period
-router.delete('/:id', authenticateToken, deletePersonnelAvailability);
+router.delete('/:id', authenticateToken, (req, res, next) => {
+  if (!checkPermission(availabilityPermissions.canDeleteAvailability, req.user)) {
+    return res.status(403).json({
+      success: false,
+      error: {
+        message: 'Access denied. Only administrators can delete availability periods.',
+      },
+    });
+  }
+  next();
+}, deletePersonnelAvailability);
 
 module.exports = router;
