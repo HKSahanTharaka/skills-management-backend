@@ -68,7 +68,7 @@ const register = async (req, res, next) => {
       [email, hashedPassword, role, approvalStatus]
     );
 
-    const message = role === 'manager' 
+    const message = role === 'manager'
       ? 'Registration successful. Your account is pending admin approval.'
       : 'User registered successfully';
 
@@ -148,7 +148,7 @@ const login = async (req, res, next) => {
     }
 
     const jwtSecret = process.env.JWT_SECRET;
-    
+
     if (!jwtSecret) {
       console.error('JWT_SECRET is not configured in environment variables');
       return res.status(500).json({
@@ -157,7 +157,7 @@ const login = async (req, res, next) => {
         message: 'Authentication service is not properly configured'
       });
     }
-    
+
     const token = jwt.sign(
       {
         id: user.id,
@@ -192,9 +192,9 @@ const getCurrentUser = async (req, res, next) => {
     const userId = req.user.id;
 
     const [users] = await pool.execute(
-      `SELECT u.id, u.email, u.role, u.approval_status, u.created_at, u.updated_at,
+      `SELECT u.id, u.email, u.role, u.approval_status, u.profile_image_url, u.created_at, u.updated_at,
               p.id as personnel_id, p.name, p.role_title, p.experience_level, 
-              p.profile_image_url, p.bio
+              p.profile_image_url as personnel_profile_image_url, p.bio
        FROM users u
        LEFT JOIN personnel p ON u.id = p.user_id
        WHERE u.id = ?`,
@@ -219,6 +219,7 @@ const getCurrentUser = async (req, res, next) => {
         email: userData.email,
         role: userData.role,
         approval_status: userData.approval_status,
+        profile_image_url: userData.profile_image_url,
         created_at: userData.created_at,
         updated_at: userData.updated_at,
         personnel: userData.personnel_id ? {
@@ -226,7 +227,7 @@ const getCurrentUser = async (req, res, next) => {
           name: userData.name,
           role_title: userData.role_title,
           experience_level: userData.experience_level,
-          profile_image_url: userData.profile_image_url,
+          profile_image_url: userData.personnel_profile_image_url,
           bio: userData.bio,
         } : null,
       },
@@ -239,7 +240,7 @@ const getCurrentUser = async (req, res, next) => {
 const updateProfile = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const { email, currentPassword, newPassword } = req.body;
+    const { email, currentPassword, newPassword, profile_image_url } = req.body;
 
     const [users] = await pool.execute(
       'SELECT id, email, password FROM users WHERE id = ?',
@@ -288,6 +289,13 @@ const updateProfile = async (req, res, next) => {
       );
     }
 
+    if (profile_image_url !== undefined) {
+      await pool.execute(
+        'UPDATE users SET profile_image_url = ? WHERE id = ?',
+        [profile_image_url || null, userId]
+      );
+    }
+
     if (newPassword) {
       if (!currentPassword) {
         return res.status(400).json({
@@ -328,9 +336,9 @@ const updateProfile = async (req, res, next) => {
     }
 
     const [updatedUsers] = await pool.execute(
-      `SELECT u.id, u.email, u.role, u.approval_status, u.created_at, u.updated_at,
+      `SELECT u.id, u.email, u.role, u.approval_status, u.profile_image_url, u.created_at, u.updated_at,
               p.id as personnel_id, p.name, p.role_title, p.experience_level, 
-              p.profile_image_url, p.bio
+              p.profile_image_url as personnel_profile_image_url, p.bio
        FROM users u
        LEFT JOIN personnel p ON u.id = p.user_id
        WHERE u.id = ?`,
@@ -347,6 +355,7 @@ const updateProfile = async (req, res, next) => {
         email: userData.email,
         role: userData.role,
         approval_status: userData.approval_status,
+        profile_image_url: userData.profile_image_url,
         created_at: userData.created_at,
         updated_at: userData.updated_at,
         personnel: userData.personnel_id ? {
@@ -354,7 +363,7 @@ const updateProfile = async (req, res, next) => {
           name: userData.name,
           role_title: userData.role_title,
           experience_level: userData.experience_level,
-          profile_image_url: userData.profile_image_url,
+          profile_image_url: userData.personnel_profile_image_url,
           bio: userData.bio,
         } : null,
       },

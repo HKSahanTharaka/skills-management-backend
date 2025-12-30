@@ -9,6 +9,7 @@ CREATE TABLE users (
     password VARCHAR(255) NOT NULL,
     role ENUM('admin', 'manager') DEFAULT 'manager',
     approval_status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+    profile_image_url VARCHAR(500),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_email (email),
