@@ -643,6 +643,161 @@ const getPersonnelAllocations = async (req, res, next) => {
   }
 };
 
+const getTeamUtilization = async (req, res, next) => {
+  try {
+    const { months = 3 } = req.query;
+    
+    const today = new Date();
+    const endDate = new Date();
+    endDate.setMonth(endDate.getMonth() + parseInt(months));
+
+    const startDateStr = today.toISOString().split('T')[0];
+    const endDateStr = endDate.toISOString().split('T')[0];
+
+    const [personnelWithAllocations] = await pool.execute(
+      `SELECT 
+        p.id as personnel_id,
+        p.name as personnel_name,
+        p.role_title,
+        p.experience_level,
+        p.profile_image_url,
+        pa.project_id,
+        pr.project_name,
+        pa.allocation_percentage,
+        pa.start_date,
+        pa.end_date,
+        pa.role_in_project
+      FROM personnel p
+      LEFT JOIN project_allocations pa ON p.id = pa.personnel_id
+        AND pa.end_date >= ?
+        AND pa.start_date <= ?
+      LEFT JOIN projects pr ON pa.project_id = pr.id
+      ORDER BY p.name, pa.start_date`,
+      [startDateStr, endDateStr]
+    );
+
+    const personnelMap = new Map();
+
+    personnelWithAllocations.forEach((row) => {
+      if (!personnelMap.has(row.personnel_id)) {
+        personnelMap.set(row.personnel_id, {
+          personnel_id: row.personnel_id,
+          personnel_name: row.personnel_name,
+          role_title: row.role_title,
+          experience_level: row.experience_level,
+          profile_image_url: row.profile_image_url,
+          allocations: [],
+          total_utilization: 0,
+        });
+      }
+
+      if (row.project_id) {
+        personnelMap.get(row.personnel_id).allocations.push({
+          project_id: row.project_id,
+          project_name: row.project_name,
+          allocation_percentage: row.allocation_percentage,
+          start_date: row.start_date,
+          end_date: row.end_date,
+          role_in_project: row.role_in_project,
+        });
+      }
+    });
+
+    const utilizationData = Array.from(personnelMap.values()).map((person) => {
+      if (person.allocations.length === 0) {
+        return {
+          ...person,
+          total_utilization: 0,
+          utilization_by_month: generateEmptyMonths(startDateStr, endDateStr),
+        };
+      }
+
+      const utilizationByMonth = calculateUtilizationByMonth(
+        person.allocations,
+        startDateStr,
+        endDateStr
+      );
+
+      const avgUtilization = utilizationByMonth.reduce(
+        (sum, month) => sum + month.utilization,
+        0
+      ) / utilizationByMonth.length;
+
+      return {
+        ...person,
+        total_utilization: Math.round(avgUtilization),
+        utilization_by_month: utilizationByMonth,
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      data: utilizationData,
+      date_range: {
+        start: startDateStr,
+        end: endDateStr,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+function generateEmptyMonths(startDate, endDate) {
+  const months = [];
+  const current = new Date(startDate);
+  const end = new Date(endDate);
+
+  while (current <= end) {
+    months.push({
+      month: current.toISOString().slice(0, 7), // YYYY-MM format
+      month_label: current.toLocaleDateString('en-US', { 
+        month: 'short', 
+        year: 'numeric' 
+      }),
+      utilization: 0,
+    });
+    current.setMonth(current.getMonth() + 1);
+  }
+
+  return months;
+}
+
+function calculateUtilizationByMonth(allocations, startDate, endDate) {
+  const months = [];
+  const current = new Date(startDate);
+  const end = new Date(endDate);
+
+  while (current <= end) {
+    const monthStart = new Date(current.getFullYear(), current.getMonth(), 1);
+    const monthEnd = new Date(current.getFullYear(), current.getMonth() + 1, 0);
+
+    let monthUtilization = 0;
+
+    allocations.forEach((allocation) => {
+      const allocStart = new Date(allocation.start_date);
+      const allocEnd = new Date(allocation.end_date);
+
+      if (allocStart <= monthEnd && allocEnd >= monthStart) {
+        monthUtilization += allocation.allocation_percentage;
+      }
+    });
+
+    months.push({
+      month: current.toISOString().slice(0, 7), // YYYY-MM format
+      month_label: current.toLocaleDateString('en-US', { 
+        month: 'short', 
+        year: 'numeric' 
+      }),
+      utilization: Math.min(monthUtilization, 200), // Cap at 200% for display
+    });
+
+    current.setMonth(current.getMonth() + 1);
+  }
+
+  return months;
+}
+
 module.exports = {
   createProjectAllocation,
   getPersonnelUtilization,
@@ -650,4 +805,5 @@ module.exports = {
   updateProjectAllocation,
   deleteProjectAllocation,
   getPersonnelAllocations,
+  getTeamUtilization,
 };

@@ -7,9 +7,11 @@ const {
   updateProjectAllocation,
   deleteProjectAllocation,
   getPersonnelAllocations,
+  getTeamUtilization,
 } = require('../controllers/allocation.controller');
 const { authenticateToken, requireAnyRole } = require('../middleware/auth');
 
+router.get('/team/utilization', authenticateToken, requireAnyRole(['admin', 'manager']), getTeamUtilization);
 router.get('/personnel/:id/utilization', authenticateToken, getPersonnelUtilization);
 router.get('/personnel/:id', authenticateToken, getPersonnelAllocations);
 router.get('/project/:id', authenticateToken, requireAnyRole(['admin', 'manager']), getProjectTeam);

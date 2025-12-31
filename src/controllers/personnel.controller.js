@@ -133,41 +133,98 @@ const getAllPersonnel = async (req, res, next) => {
       experience_level,
       role_title,
       search,
+      skill_filters,
       page = 1,
       limit = 10,
     } = req.query;
 
-    let query = 'SELECT * FROM personnel';
+    // Parse skill filters if provided
+    let parsedSkillFilters = [];
+    if (skill_filters) {
+      try {
+        parsedSkillFilters = JSON.parse(skill_filters);
+      } catch (error) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            message: 'Invalid skill_filters format. Must be valid JSON.',
+          },
+        });
+      }
+    }
+
+    let query = 'SELECT DISTINCT p.* FROM personnel p';
     const conditions = [];
     const params = [];
 
+    if (parsedSkillFilters.length > 0) {
+      parsedSkillFilters.forEach((filter, index) => {
+        const alias = `ps${index}`;
+        query += ` INNER JOIN personnel_skills ${alias} ON p.id = ${alias}.personnel_id`;
+      });
+    }
+
     if (experience_level) {
-      conditions.push('experience_level = ?');
+      conditions.push('p.experience_level = ?');
       params.push(experience_level);
     }
 
     if (role_title) {
-      conditions.push('role_title = ?');
-      params.push(role_title);
+      conditions.push('p.role_title LIKE ?');
+      params.push(`%${role_title}%`);
     }
 
     if (search) {
-      conditions.push('(name LIKE ? OR email LIKE ?)');
+      conditions.push('(p.name LIKE ? OR p.email LIKE ?)');
       const searchPattern = `%${search}%`;
       params.push(searchPattern, searchPattern);
     }
+
+    parsedSkillFilters.forEach((filter, index) => {
+      const alias = `ps${index}`;
+      const skillConditions = [];
+
+      skillConditions.push(`${alias}.skill_id = ?`);
+      params.push(filter.skill_id);
+
+      if (filter.proficiency_level) {
+        skillConditions.push(`${alias}.proficiency_level = ?`);
+        params.push(filter.proficiency_level);
+      }
+
+      if (filter.min_proficiency_level) {
+        const proficiencyLevels = ['Beginner', 'Intermediate', 'Advanced', 'Expert'];
+        const minIndex = proficiencyLevels.indexOf(filter.min_proficiency_level);
+        
+        if (minIndex !== -1) {
+          const validLevels = proficiencyLevels.slice(minIndex);
+          const placeholders = validLevels.map(() => '?').join(',');
+          skillConditions.push(`${alias}.proficiency_level IN (${placeholders})`);
+          params.push(...validLevels);
+        }
+      }
+
+      if (filter.years_of_experience) {
+        skillConditions.push(`${alias}.years_of_experience >= ?`);
+        params.push(parseFloat(filter.years_of_experience));
+      }
+
+      if (skillConditions.length > 0) {
+        conditions.push(`(${skillConditions.join(' AND ')})`);
+      }
+    });
 
     if (conditions.length > 0) {
       query += ' WHERE ' + conditions.join(' AND ');
     }
 
-    const countQuery = query.replace('SELECT *', 'SELECT COUNT(*) as total');
+    const countQuery = query.replace(/SELECT DISTINCT p\.\*/i, 'SELECT COUNT(DISTINCT p.id) as total');
     const [countResult] = await pool.execute(countQuery, params);
     const total = countResult[0].total;
 
     const limitValue = parseInt(limit);
     const offsetValue = (parseInt(page) - 1) * limitValue;
-    query += ` ORDER BY created_at DESC LIMIT ${limitValue} OFFSET ${offsetValue}`;
+    query += ` ORDER BY p.created_at DESC LIMIT ${limitValue} OFFSET ${offsetValue}`;
 
     const [personnel] = await pool.execute(query, params);
 

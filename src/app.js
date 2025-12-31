@@ -10,6 +10,7 @@ const matchingRoutes = require('./routes/matching.routes');
 const availabilityRoutes = require('./routes/availability.routes');
 const allocationRoutes = require('./routes/allocation.routes');
 const managerRoutes = require('./routes/manager.routes');
+const uploadRoutes = require('./routes/upload.routes');
 
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 
@@ -52,6 +53,7 @@ app.use('/api/matching', matchingRoutes);
 app.use('/api/availability', availabilityRoutes);
 app.use('/api/allocations', allocationRoutes);
 app.use('/api/managers', managerRoutes);
+app.use('/api/upload', uploadRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
