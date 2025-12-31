@@ -4,15 +4,8 @@ const multer = require('multer');
 const { uploadImage } = require('../controllers/upload.controller');
 const { authenticateToken } = require('../middleware/auth');
 
-// Configure multer for memory storage
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname);
-  },
-});
+// Configure multer for memory storage (better for Cloudinary)
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage,

@@ -13,10 +13,19 @@ const uploadImage = async (req, res) => {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    // Upload to cloudinary
-    const result = await cloudinary.uploader.upload(req.file.path, {
-      folder: 'skills_management',
-      resource_type: 'auto',
+    // Upload to cloudinary using buffer from memory storage
+    const result = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'skills_management',
+          resource_type: 'auto',
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+      uploadStream.end(req.file.buffer);
     });
 
     res.json({
@@ -26,7 +35,10 @@ const uploadImage = async (req, res) => {
     });
   } catch (error) {
     console.error('Upload error:', error);
-    res.status(500).json({ error: 'Failed to upload image' });
+    res.status(500).json({ 
+      error: 'Failed to upload image',
+      details: error.message 
+    });
   }
 };
 
