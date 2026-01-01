@@ -6,9 +6,12 @@ const getAllManagers = async (req, res, next) => {
 
     let whereConditions = 'WHERE u.role = ?';
     const countParams = ['manager'];
-    
+
     const trimmedApprovalStatus = approval_status ? approval_status.trim() : '';
-    if (trimmedApprovalStatus !== '' && ['pending', 'approved', 'rejected'].includes(trimmedApprovalStatus)) {
+    if (
+      trimmedApprovalStatus !== '' &&
+      ['pending', 'approved', 'rejected'].includes(trimmedApprovalStatus)
+    ) {
       whereConditions += ' AND u.approval_status = ?';
       countParams.push(trimmedApprovalStatus);
     }
@@ -29,7 +32,7 @@ const getAllManagers = async (req, res, next) => {
 
     const offset = (parseInt(page) - 1) * parseInt(limit);
     const limitValue = parseInt(limit);
-    
+
     let query = `SELECT u.id, u.email, u.role, u.approval_status, u.created_at, u.updated_at,
                         p.id as personnel_id, p.name, p.role_title, p.experience_level, 
                         p.profile_image_url
@@ -40,20 +43,22 @@ const getAllManagers = async (req, res, next) => {
 
     const [managers] = await pool.execute(query, countParams);
 
-    const formattedManagers = managers.map(manager => ({
+    const formattedManagers = managers.map((manager) => ({
       id: manager.id,
       email: manager.email,
       role: manager.role,
       approval_status: manager.approval_status,
       created_at: manager.created_at,
       updated_at: manager.updated_at,
-      personnel: manager.personnel_id ? {
-        id: manager.personnel_id,
-        name: manager.name,
-        role_title: manager.role_title,
-        experience_level: manager.experience_level,
-        profile_image_url: manager.profile_image_url,
-      } : null,
+      personnel: manager.personnel_id
+        ? {
+            id: manager.personnel_id,
+            name: manager.name,
+            role_title: manager.role_title,
+            experience_level: manager.experience_level,
+            profile_image_url: manager.profile_image_url,
+          }
+        : null,
     }));
 
     res.status(200).json({
@@ -105,14 +110,16 @@ const getManagerById = async (req, res, next) => {
         approval_status: manager.approval_status,
         created_at: manager.created_at,
         updated_at: manager.updated_at,
-        personnel: manager.personnel_id ? {
-          id: manager.personnel_id,
-          name: manager.name,
-          role_title: manager.role_title,
-          experience_level: manager.experience_level,
-          profile_image_url: manager.profile_image_url,
-          bio: manager.bio,
-        } : null,
+        personnel: manager.personnel_id
+          ? {
+              id: manager.personnel_id,
+              name: manager.name,
+              role_title: manager.role_title,
+              experience_level: manager.experience_level,
+              profile_image_url: manager.profile_image_url,
+              bio: manager.bio,
+            }
+          : null,
       },
     });
   } catch (error) {
@@ -274,4 +281,3 @@ module.exports = {
   deleteManager,
   getManagerStats,
 };
-

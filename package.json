@@ -14,21 +14,7 @@
     "lint:fix": "eslint src/ --fix",
     "format": "prettier --write \"src/**/*.js\""
   },
-  "jest": {
-    "testEnvironment": "node",
-    "coverageDirectory": "coverage",
-    "collectCoverageFrom": [
-      "src/**/*.js",
-      "!src/app.js",
-      "!src/server.js"
-    ],
-    "coveragePathIgnorePatterns": [
-      "/node_modules/",
-      "/tests/"
-    ],
-    "testTimeout": 10000
-  },
-  "repository": {
+"repository": {
     "type": "git",
     "url": "git+https://github.com/HKSahanTharaka/skills-management-backend.git"
   },

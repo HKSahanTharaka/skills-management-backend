@@ -204,13 +204,13 @@ const getAvailablePersonnelForDateRange = async (startDate, endDate) => {
 
   const [results] = await pool.execute(query, [
     startDate,
-    endDate, // for availability check
+    endDate,
     startDate,
-    endDate, // for allocation overlap checks
+    endDate,
     startDate,
-    endDate, // for allocation overlap checks
+    endDate,
     startDate,
-    endDate, // for allocation overlap checks
+    endDate,
   ]);
 
   return results;

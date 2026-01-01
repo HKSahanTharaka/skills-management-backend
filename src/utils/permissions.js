@@ -8,7 +8,7 @@ const personnelPermissions = {
   canViewAllPersonnel: (user) => {
     return user.role === ROLES.ADMIN || user.role === ROLES.MANAGER;
   },
-  
+
   canViewPersonnelDetail: (user) => {
     return user.role === ROLES.ADMIN || user.role === ROLES.MANAGER;
   },
@@ -232,6 +232,7 @@ const checkPermission = (permissionFunction, user, ...args) => {
   try {
     return permissionFunction(user, ...args);
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Permission check error:', error);
     return false;
   }
@@ -251,4 +252,3 @@ module.exports = {
   systemPermissions,
   checkPermission,
 };
-

@@ -15,7 +15,6 @@ CREATE TABLE users (
     INDEX idx_approval_status (approval_status)
 );
 
--- Personnel table
 CREATE TABLE personnel (
     id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(255) NOT NULL,
@@ -32,7 +31,6 @@ CREATE TABLE personnel (
     INDEX idx_experience_level (experience_level)
 );
 
--- Skills table
 CREATE TABLE skills (
     id INT PRIMARY KEY AUTO_INCREMENT,
     skill_name VARCHAR(255) UNIQUE NOT NULL,
@@ -44,7 +42,6 @@ CREATE TABLE skills (
     INDEX idx_skill_name (skill_name)
 );
 
--- Personnel Skills junction table (many-to-many)
 CREATE TABLE personnel_skills (
     id INT PRIMARY KEY AUTO_INCREMENT,
     personnel_id INT NOT NULL,
@@ -61,7 +58,6 @@ CREATE TABLE personnel_skills (
     INDEX idx_proficiency (proficiency_level)
 );
 
--- Projects table
 CREATE TABLE projects (
     id INT PRIMARY KEY AUTO_INCREMENT,
     project_name VARCHAR(255) NOT NULL,
@@ -75,7 +71,6 @@ CREATE TABLE projects (
     INDEX idx_dates (start_date, end_date)
 );
 
--- Project Required Skills table
 CREATE TABLE project_required_skills (
     id INT PRIMARY KEY AUTO_INCREMENT,
     project_id INT NOT NULL,
@@ -88,7 +83,6 @@ CREATE TABLE project_required_skills (
     INDEX idx_project_id (project_id)
 );
 
--- Personnel Availability table
 CREATE TABLE personnel_availability (
     id INT PRIMARY KEY AUTO_INCREMENT,
     personnel_id INT NOT NULL,
@@ -103,7 +97,6 @@ CREATE TABLE personnel_availability (
     INDEX idx_dates (start_date, end_date)
 );
 
--- Project Allocations table
 CREATE TABLE project_allocations (
     id INT PRIMARY KEY AUTO_INCREMENT,
     project_id INT NOT NULL,
@@ -120,6 +113,8 @@ CREATE TABLE project_allocations (
     INDEX idx_personnel_id (personnel_id),
     INDEX idx_dates (start_date, end_date)
 );
+
+-- SEED DATA
 
 INSERT INTO users (email, password, role, approval_status) VALUES
 ('admin@techcorp.com', '$2a$10$rZ5jLZPJ5w9P5qPZ5w9P5uEjP5qPZ5w9P5qPZ5w9P5qPZ5w9P5qPZ5', 'admin', 'approved'),

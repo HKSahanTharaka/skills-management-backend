@@ -162,7 +162,8 @@ const createProjectAllocation = async (req, res, next) => {
             message: `Over-allocation detected: This would result in ${maxConcurrentAllocation}% total allocation (exceeds 100% limit).`,
             hint: `Current allocations: ${maxConcurrentAllocation - allocation_percentage}% + Requested: ${allocation_percentage}% = ${maxConcurrentAllocation}%. Consider reducing allocation percentage or adjusting dates.`,
             details: {
-              currentAllocation: maxConcurrentAllocation - allocation_percentage,
+              currentAllocation:
+                maxConcurrentAllocation - allocation_percentage,
               requestedAllocation: allocation_percentage,
               totalAllocation: maxConcurrentAllocation,
               maxAllowed: 100,
@@ -483,7 +484,7 @@ const updateProjectAllocation = async (req, res, next) => {
       );
 
       let maxConcurrentAllocation = finalAllocationPercentage;
-      
+
       for (const existingAlloc of overlappingAllocations) {
         const overlapStart = new Date(
           Math.max(new Date(finalStartDate), new Date(existingAlloc.start_date))
@@ -646,7 +647,7 @@ const getPersonnelAllocations = async (req, res, next) => {
 const getTeamUtilization = async (req, res, next) => {
   try {
     const { months = 3 } = req.query;
-    
+
     const today = new Date();
     const endDate = new Date();
     endDate.setMonth(endDate.getMonth() + parseInt(months));
@@ -718,10 +719,9 @@ const getTeamUtilization = async (req, res, next) => {
         endDateStr
       );
 
-      const avgUtilization = utilizationByMonth.reduce(
-        (sum, month) => sum + month.utilization,
-        0
-      ) / utilizationByMonth.length;
+      const avgUtilization =
+        utilizationByMonth.reduce((sum, month) => sum + month.utilization, 0) /
+        utilizationByMonth.length;
 
       return {
         ...person,
@@ -751,9 +751,9 @@ function generateEmptyMonths(startDate, endDate) {
   while (current <= end) {
     months.push({
       month: current.toISOString().slice(0, 7), // YYYY-MM format
-      month_label: current.toLocaleDateString('en-US', { 
-        month: 'short', 
-        year: 'numeric' 
+      month_label: current.toLocaleDateString('en-US', {
+        month: 'short',
+        year: 'numeric',
       }),
       utilization: 0,
     });
@@ -785,9 +785,9 @@ function calculateUtilizationByMonth(allocations, startDate, endDate) {
 
     months.push({
       month: current.toISOString().slice(0, 7), // YYYY-MM format
-      month_label: current.toLocaleDateString('en-US', { 
-        month: 'short', 
-        year: 'numeric' 
+      month_label: current.toLocaleDateString('en-US', {
+        month: 'short',
+        year: 'numeric',
       }),
       utilization: Math.min(monthUtilization, 200), // Cap at 200% for display
     });
@@ -798,8 +798,98 @@ function calculateUtilizationByMonth(allocations, startDate, endDate) {
   return months;
 }
 
+const getAllAllocations = async (req, res, next) => {
+  try {
+    const { project_id, personnel_id } = req.query;
+
+    let query = `SELECT 
+      pa.id,
+      pa.project_id,
+      pa.personnel_id,
+      pa.allocation_percentage,
+      pa.start_date,
+      pa.end_date,
+      pa.role_in_project,
+      pa.created_at,
+      pa.updated_at,
+      proj.project_name,
+      p.name as personnel_name
+    FROM project_allocations pa
+    INNER JOIN projects proj ON pa.project_id = proj.id
+    INNER JOIN personnel p ON pa.personnel_id = p.id
+    WHERE 1=1`;
+
+    const params = [];
+
+    if (project_id) {
+      query += ' AND pa.project_id = ?';
+      params.push(project_id);
+    }
+
+    if (personnel_id) {
+      query += ' AND pa.personnel_id = ?';
+      params.push(personnel_id);
+    }
+
+    query += ' ORDER BY pa.created_at DESC';
+
+    const [allocations] = await pool.execute(query, params);
+
+    res.status(200).json({
+      success: true,
+      data: allocations,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getAllocationById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const [allocations] = await pool.execute(
+      `SELECT 
+        pa.id,
+        pa.project_id,
+        pa.personnel_id,
+        pa.allocation_percentage,
+        pa.start_date,
+        pa.end_date,
+        pa.role_in_project,
+        pa.created_at,
+        pa.updated_at,
+        proj.project_name,
+        p.name as personnel_name
+      FROM project_allocations pa
+      INNER JOIN projects proj ON pa.project_id = proj.id
+      INNER JOIN personnel p ON pa.personnel_id = p.id
+      WHERE pa.id = ?`,
+      [id]
+    );
+
+    if (allocations.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          message: 'Allocation not found',
+        },
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: allocations[0],
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createProjectAllocation,
+  getAllAllocations,
+  getAllocationById,
   getPersonnelUtilization,
   getProjectTeam,
   updateProjectAllocation,

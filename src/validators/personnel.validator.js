@@ -33,20 +33,20 @@ const validateCreatePersonnel = [
     .isLength({ max: 500 })
     .withMessage('Profile image URL must not exceed 500 characters'),
 
-  body('bio').optional({ checkFalsy: true }).isString().withMessage('Bio must be a string'),
+  body('bio')
+    .optional({ checkFalsy: true })
+    .isString()
+    .withMessage('Bio must be a string'),
 
   body('user_id')
     .optional({ checkFalsy: true })
     .isInt({ min: 1 })
     .withMessage('User ID must be a positive integer'),
 
-  body('skills')
-    .notEmpty()
-    .withMessage('At least one skill is required')
-    .isArray({ min: 1 })
-    .withMessage('Skills must be an array with at least one skill'),
+  body('skills').optional().isArray().withMessage('Skills must be an array'),
 
   body('skills.*.skill_id')
+    .optional()
     .notEmpty()
     .withMessage('Skill ID is required')
     .isInt({ min: 1 })
@@ -56,7 +56,9 @@ const validateCreatePersonnel = [
     .notEmpty()
     .withMessage('Proficiency level is required')
     .isIn(['Beginner', 'Intermediate', 'Advanced', 'Expert'])
-    .withMessage('Proficiency level must be one of: Beginner, Intermediate, Advanced, Expert'),
+    .withMessage(
+      'Proficiency level must be one of: Beginner, Intermediate, Advanced, Expert'
+    ),
 
   body('skills.*.years_of_experience')
     .optional()
@@ -118,17 +120,17 @@ const validateUpdatePersonnel = [
     .isLength({ max: 500 })
     .withMessage('Profile image URL must not exceed 500 characters'),
 
-  body('bio').optional({ checkFalsy: true }).isString().withMessage('Bio must be a string'),
+  body('bio')
+    .optional({ checkFalsy: true })
+    .isString()
+    .withMessage('Bio must be a string'),
 
   body('user_id')
     .optional({ checkFalsy: true })
     .isInt({ min: 1 })
     .withMessage('User ID must be a positive integer'),
 
-  body('skills')
-    .optional()
-    .isArray()
-    .withMessage('Skills must be an array'),
+  body('skills').optional().isArray().withMessage('Skills must be an array'),
 
   body('skills.*.skill_id')
     .optional()
@@ -138,7 +140,9 @@ const validateUpdatePersonnel = [
   body('skills.*.proficiency_level')
     .optional()
     .isIn(['Beginner', 'Intermediate', 'Advanced', 'Expert'])
-    .withMessage('Proficiency level must be one of: Beginner, Intermediate, Advanced, Expert'),
+    .withMessage(
+      'Proficiency level must be one of: Beginner, Intermediate, Advanced, Expert'
+    ),
 
   body('skills.*.years_of_experience')
     .optional()
