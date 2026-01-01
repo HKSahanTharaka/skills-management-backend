@@ -140,10 +140,16 @@ jobs:
     steps:
       - name: Check status
         run: |
-          if [ "${{ needs.lint.result }}" == "success" ] && [ "${{ needs.test.result }}" == "success" ] && [ "${{ needs.build.result }}" == "success" ]; then
+          if [ "${{ needs.lint.result }}" == "failure" ] || [ "${{ needs.test.result }}" == "failure" ]; then
+            echo "Critical checks failed"
+            exit 1
+          elif [ "${{ needs.lint.result }}" == "success" ] && [ "${{ needs.test.result }}" == "success" ] && [ "${{ needs.build.result }}" == "success" ]; then
             echo "All checks passed!"
+          elif [ "${{ needs.build.result }}" == "skipped" ]; then
+            echo "Build was skipped (likely due to dependency failure)"
+            exit 1
           else
-            echo "Some checks failed"
+            echo "Some checks failed or were cancelled"
             exit 1
           fi
 
