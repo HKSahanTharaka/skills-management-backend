@@ -143,7 +143,7 @@ const getAllPersonnel = async (req, res, next) => {
     if (skill_filters) {
       try {
         parsedSkillFilters = JSON.parse(skill_filters);
-      } catch (error) {
+      } catch {
         return res.status(400).json({
           success: false,
           error: {
@@ -193,13 +193,22 @@ const getAllPersonnel = async (req, res, next) => {
       }
 
       if (filter.min_proficiency_level) {
-        const proficiencyLevels = ['Beginner', 'Intermediate', 'Advanced', 'Expert'];
-        const minIndex = proficiencyLevels.indexOf(filter.min_proficiency_level);
-        
+        const proficiencyLevels = [
+          'Beginner',
+          'Intermediate',
+          'Advanced',
+          'Expert',
+        ];
+        const minIndex = proficiencyLevels.indexOf(
+          filter.min_proficiency_level
+        );
+
         if (minIndex !== -1) {
           const validLevels = proficiencyLevels.slice(minIndex);
           const placeholders = validLevels.map(() => '?').join(',');
-          skillConditions.push(`${alias}.proficiency_level IN (${placeholders})`);
+          skillConditions.push(
+            `${alias}.proficiency_level IN (${placeholders})`
+          );
           params.push(...validLevels);
         }
       }
@@ -218,7 +227,10 @@ const getAllPersonnel = async (req, res, next) => {
       query += ' WHERE ' + conditions.join(' AND ');
     }
 
-    const countQuery = query.replace(/SELECT DISTINCT p\.\*/i, 'SELECT COUNT(DISTINCT p.id) as total');
+    const countQuery = query.replace(
+      /SELECT DISTINCT p\.\*/i,
+      'SELECT COUNT(DISTINCT p.id) as total'
+    );
     const [countResult] = await pool.execute(countQuery, params);
     const total = countResult[0].total;
 
@@ -457,7 +469,12 @@ const updatePersonnel = async (req, res, next) => {
         for (const skill of skills) {
           await pool.execute(
             'INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level, years_of_experience) VALUES (?, ?, ?, ?)',
-            [id, skill.skill_id, skill.proficiency_level, skill.years_of_experience || 0]
+            [
+              id,
+              skill.skill_id,
+              skill.proficiency_level,
+              skill.years_of_experience || 0,
+            ]
           );
         }
       }
@@ -487,12 +504,13 @@ const updatePersonnel = async (req, res, next) => {
     // Parse skills JSON
     if (updatedPersonnel[0].skills) {
       // Check if skills is already an object or needs parsing
-      const skillsData = typeof updatedPersonnel[0].skills === 'string' 
-        ? JSON.parse(updatedPersonnel[0].skills) 
-        : updatedPersonnel[0].skills;
-      
-      updatedPersonnel[0].skills = Array.isArray(skillsData) 
-        ? skillsData.filter(skill => skill && skill.skill_id !== null)
+      const skillsData =
+        typeof updatedPersonnel[0].skills === 'string'
+          ? JSON.parse(updatedPersonnel[0].skills)
+          : updatedPersonnel[0].skills;
+
+      updatedPersonnel[0].skills = Array.isArray(skillsData)
+        ? skillsData.filter((skill) => skill && skill.skill_id !== null)
         : [];
     } else {
       updatedPersonnel[0].skills = [];

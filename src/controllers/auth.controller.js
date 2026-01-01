@@ -68,9 +68,10 @@ const register = async (req, res, next) => {
       [email, hashedPassword, role, approvalStatus]
     );
 
-    const message = role === 'manager'
-      ? 'Registration successful. Your account is pending admin approval.'
-      : 'User registered successfully';
+    const message =
+      role === 'manager'
+        ? 'Registration successful. Your account is pending admin approval.'
+        : 'User registered successfully';
 
     res.status(201).json({
       success: true,
@@ -130,7 +131,8 @@ const login = async (req, res, next) => {
       return res.status(403).json({
         success: false,
         error: {
-          message: 'Your account has been rejected. Please contact the administrator',
+          message:
+            'Your account has been rejected. Please contact the administrator',
           status: 'rejected',
         },
       });
@@ -150,11 +152,12 @@ const login = async (req, res, next) => {
     const jwtSecret = process.env.JWT_SECRET;
 
     if (!jwtSecret) {
+      // eslint-disable-next-line no-console
       console.error('JWT_SECRET is not configured in environment variables');
       return res.status(500).json({
         success: false,
         error: 'Server configuration error',
-        message: 'Authentication service is not properly configured'
+        message: 'Authentication service is not properly configured',
       });
     }
 
@@ -222,14 +225,16 @@ const getCurrentUser = async (req, res, next) => {
         profile_image_url: userData.profile_image_url,
         created_at: userData.created_at,
         updated_at: userData.updated_at,
-        personnel: userData.personnel_id ? {
-          id: userData.personnel_id,
-          name: userData.name,
-          role_title: userData.role_title,
-          experience_level: userData.experience_level,
-          profile_image_url: userData.personnel_profile_image_url,
-          bio: userData.bio,
-        } : null,
+        personnel: userData.personnel_id
+          ? {
+              id: userData.personnel_id,
+              name: userData.name,
+              role_title: userData.role_title,
+              experience_level: userData.experience_level,
+              profile_image_url: userData.personnel_profile_image_url,
+              bio: userData.bio,
+            }
+          : null,
       },
     });
   } catch (error) {
@@ -283,10 +288,10 @@ const updateProfile = async (req, res, next) => {
         });
       }
 
-      await pool.execute(
-        'UPDATE users SET email = ? WHERE id = ?',
-        [email, userId]
-      );
+      await pool.execute('UPDATE users SET email = ? WHERE id = ?', [
+        email,
+        userId,
+      ]);
     }
 
     if (profile_image_url !== undefined) {
@@ -306,7 +311,10 @@ const updateProfile = async (req, res, next) => {
         });
       }
 
-      const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+      const isPasswordValid = await bcrypt.compare(
+        currentPassword,
+        user.password
+      );
 
       if (!isPasswordValid) {
         return res.status(401).json({
@@ -329,10 +337,10 @@ const updateProfile = async (req, res, next) => {
       const saltRounds = 10;
       const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
 
-      await pool.execute(
-        'UPDATE users SET password = ? WHERE id = ?',
-        [hashedPassword, userId]
-      );
+      await pool.execute('UPDATE users SET password = ? WHERE id = ?', [
+        hashedPassword,
+        userId,
+      ]);
     }
 
     const [updatedUsers] = await pool.execute(
@@ -358,14 +366,16 @@ const updateProfile = async (req, res, next) => {
         profile_image_url: userData.profile_image_url,
         created_at: userData.created_at,
         updated_at: userData.updated_at,
-        personnel: userData.personnel_id ? {
-          id: userData.personnel_id,
-          name: userData.name,
-          role_title: userData.role_title,
-          experience_level: userData.experience_level,
-          profile_image_url: userData.personnel_profile_image_url,
-          bio: userData.bio,
-        } : null,
+        personnel: userData.personnel_id
+          ? {
+              id: userData.personnel_id,
+              name: userData.name,
+              role_title: userData.role_title,
+              experience_level: userData.experience_level,
+              profile_image_url: userData.personnel_profile_image_url,
+              bio: userData.bio,
+            }
+          : null,
       },
     });
   } catch (error) {

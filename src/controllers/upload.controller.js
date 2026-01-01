@@ -34,10 +34,11 @@ const uploadImage = async (req, res) => {
       publicId: result.public_id,
     });
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Upload error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to upload image',
-      details: error.message 
+      details: error.message,
     });
   }
 };

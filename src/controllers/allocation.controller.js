@@ -162,7 +162,8 @@ const createProjectAllocation = async (req, res, next) => {
             message: `Over-allocation detected: This would result in ${maxConcurrentAllocation}% total allocation (exceeds 100% limit).`,
             hint: `Current allocations: ${maxConcurrentAllocation - allocation_percentage}% + Requested: ${allocation_percentage}% = ${maxConcurrentAllocation}%. Consider reducing allocation percentage or adjusting dates.`,
             details: {
-              currentAllocation: maxConcurrentAllocation - allocation_percentage,
+              currentAllocation:
+                maxConcurrentAllocation - allocation_percentage,
               requestedAllocation: allocation_percentage,
               totalAllocation: maxConcurrentAllocation,
               maxAllowed: 100,
@@ -483,7 +484,7 @@ const updateProjectAllocation = async (req, res, next) => {
       );
 
       let maxConcurrentAllocation = finalAllocationPercentage;
-      
+
       for (const existingAlloc of overlappingAllocations) {
         const overlapStart = new Date(
           Math.max(new Date(finalStartDate), new Date(existingAlloc.start_date))
@@ -646,7 +647,7 @@ const getPersonnelAllocations = async (req, res, next) => {
 const getTeamUtilization = async (req, res, next) => {
   try {
     const { months = 3 } = req.query;
-    
+
     const today = new Date();
     const endDate = new Date();
     endDate.setMonth(endDate.getMonth() + parseInt(months));
@@ -718,10 +719,9 @@ const getTeamUtilization = async (req, res, next) => {
         endDateStr
       );
 
-      const avgUtilization = utilizationByMonth.reduce(
-        (sum, month) => sum + month.utilization,
-        0
-      ) / utilizationByMonth.length;
+      const avgUtilization =
+        utilizationByMonth.reduce((sum, month) => sum + month.utilization, 0) /
+        utilizationByMonth.length;
 
       return {
         ...person,
@@ -751,9 +751,9 @@ function generateEmptyMonths(startDate, endDate) {
   while (current <= end) {
     months.push({
       month: current.toISOString().slice(0, 7), // YYYY-MM format
-      month_label: current.toLocaleDateString('en-US', { 
-        month: 'short', 
-        year: 'numeric' 
+      month_label: current.toLocaleDateString('en-US', {
+        month: 'short',
+        year: 'numeric',
       }),
       utilization: 0,
     });
@@ -785,9 +785,9 @@ function calculateUtilizationByMonth(allocations, startDate, endDate) {
 
     months.push({
       month: current.toISOString().slice(0, 7), // YYYY-MM format
-      month_label: current.toLocaleDateString('en-US', { 
-        month: 'short', 
-        year: 'numeric' 
+      month_label: current.toLocaleDateString('en-US', {
+        month: 'short',
+        year: 'numeric',
       }),
       utilization: Math.min(monthUtilization, 200), // Cap at 200% for display
     });

@@ -16,13 +16,15 @@ const EXPERIENCE_PRIORITY = {
 const findMatchingPersonnel = async (req, res, next) => {
   try {
     const project_id = req.params.id;
-    
+
     const additional_filters = {};
     if (req.query.experience_level) {
       additional_filters.experience_level = req.query.experience_level;
     }
     if (req.query.availability_percentage) {
-      additional_filters.availability_percentage = parseInt(req.query.availability_percentage);
+      additional_filters.availability_percentage = parseInt(
+        req.query.availability_percentage
+      );
     }
 
     if (!project_id) {
@@ -235,7 +237,6 @@ const findMatchingPersonnel = async (req, res, next) => {
       // Tertiary: Availability (descending)
       return b.availability - a.availability;
     });
-
 
     const formattedRequiredSkills = requiredSkills.map((rs) => ({
       skillId: rs.skill_id,
