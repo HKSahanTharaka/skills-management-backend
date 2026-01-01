@@ -41,12 +41,12 @@ const validateCreatePersonnel = [
     .withMessage('User ID must be a positive integer'),
 
   body('skills')
-    .notEmpty()
-    .withMessage('At least one skill is required')
-    .isArray({ min: 1 })
-    .withMessage('Skills must be an array with at least one skill'),
+    .optional()
+    .isArray()
+    .withMessage('Skills must be an array'),
 
   body('skills.*.skill_id')
+    .optional()
     .notEmpty()
     .withMessage('Skill ID is required')
     .isInt({ min: 1 })
