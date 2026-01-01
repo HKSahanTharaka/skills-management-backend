@@ -231,13 +231,12 @@ const getAllPersonnel = async (req, res, next) => {
       /SELECT DISTINCT p\.\*/i,
       'SELECT COUNT(DISTINCT p.id) as total'
     );
-    const [countResult] = await pool.execute(countQuery, params);
+    const [countResult] = await pool.execute(countQuery, [...params]);
     const total = countResult[0].total;
 
-    const limitValue = parseInt(limit);
-    const offsetValue = (parseInt(page) - 1) * limitValue;
-    query += ` ORDER BY p.created_at DESC LIMIT ? OFFSET ?`;
-    params.push(limitValue, offsetValue);
+    const limitValue = parseInt(limit, 10);
+    const offsetValue = (parseInt(page, 10) - 1) * limitValue;
+    query += ` ORDER BY p.created_at DESC LIMIT ${limitValue} OFFSET ${offsetValue}`;
 
     const [personnel] = await pool.execute(query, params);
 

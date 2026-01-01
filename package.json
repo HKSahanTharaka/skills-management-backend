@@ -9,11 +9,11 @@
     "test": "jest --coverage",
     "test:watch": "jest --watch",
     "test:unit": "jest tests/unit",
-  "test:integration": "jest tests/integration",
-  "lint": "eslint src/",
-  "lint:fix": "eslint src/ --fix",
-  "format": "prettier --write \"src/**/*.js\""
-},
+    "test:integration": "jest tests/integration",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "format": "prettier --write \"src/**/*.js\""
+  },
 "repository": {
     "type": "git",
     "url": "git+https://github.com/HKSahanTharaka/skills-management-backend.git"
