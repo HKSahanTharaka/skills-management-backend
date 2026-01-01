@@ -2,9 +2,9 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, dev ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main, dev ]
 
 jobs:
   lint:
@@ -35,10 +35,10 @@ jobs:
       mysql:
         image: mysql:8.0
         env:
-          MYSQL_ROOT_PASSWORD: root_password
+          MYSQL_ROOT_PASSWORD: ${{ secrets.TEST_DB_ROOT_PASSWORD || 'test_root_password_change_me' }}
           MYSQL_DATABASE: test_db
-          MYSQL_USER: test_user
-          MYSQL_PASSWORD: test_password
+          MYSQL_USER: ${{ secrets.TEST_DB_USER || 'test_user' }}
+          MYSQL_PASSWORD: ${{ secrets.TEST_DB_PASSWORD || 'test_password_change_me' }}
         ports:
           - 3306:3306
         options: >-
@@ -64,17 +64,23 @@ jobs:
         run: |
           echo "Waiting for MySQL to be ready..."
           for i in {1..30}; do
-            if mysqladmin ping -h"127.0.0.1" -P3306 -utest_user -ptest_password --silent; then
+            if mysqladmin ping -h"127.0.0.1" -P3306 -u"${DB_USER}" -p"${DB_PASSWORD}" --silent; then
               echo "MySQL is ready!"
               break
             fi
             echo "Waiting... ($i/30)"
             sleep 2
           done
+        env:
+          DB_USER: ${{ secrets.TEST_DB_USER || 'test_user' }}
+          DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD || 'test_password_change_me' }}
 
       - name: Setup test database
         run: |
-          mysql -h127.0.0.1 -P3306 -utest_user -ptest_password test_db < database/schema.sql || true
+          mysql -h127.0.0.1 -P3306 -u"${DB_USER}" -p"${DB_PASSWORD}" test_db < database/schema.sql || true
+        env:
+          DB_USER: ${{ secrets.TEST_DB_USER || 'test_user' }}
+          DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD || 'test_password_change_me' }}
         continue-on-error: true
 
       - name: Run tests
@@ -82,11 +88,11 @@ jobs:
         env:
           NODE_ENV: test
           DB_HOST: 127.0.0.1
-          DB_USER: test_user
-          DB_PASSWORD: test_password
+          DB_USER: ${{ secrets.TEST_DB_USER || 'test_user' }}
+          DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD || 'test_password_change_me' }}
           DB_NAME: test_db
           DB_PORT: 3306
-          JWT_SECRET: test_secret_key_for_ci
+          JWT_SECRET: ${{ secrets.TEST_JWT_SECRET || 'test_secret_key_for_ci_change_me' }}
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4
@@ -135,9 +141,9 @@ jobs:
       - name: Check status
         run: |
           if [ "${{ needs.lint.result }}" == "success" ] && [ "${{ needs.test.result }}" == "success" ] && [ "${{ needs.build.result }}" == "success" ]; then
-            echo "✅ All checks passed!"
+            echo "All checks passed!"
           else
-            echo "❌ Some checks failed"
+            echo "Some checks failed"
             exit 1
           fi
 

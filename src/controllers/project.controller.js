@@ -189,7 +189,8 @@ const getAllProjects = async (req, res, next) => {
     if (page && limit) {
       const limitValue = parseInt(limit);
       const offsetValue = (parseInt(page) - 1) * limitValue;
-      query += ` LIMIT ${limitValue} OFFSET ${offsetValue}`;
+      query += ` LIMIT ? OFFSET ?`;
+      params.push(limitValue, offsetValue);
     }
 
     // Execute query

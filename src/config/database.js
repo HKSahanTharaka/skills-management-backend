@@ -1,6 +1,47 @@
 require('dotenv').config();
 const mysql = require('mysql2/promise');
 
+// Validate required environment variables in production
+if (process.env.NODE_ENV === 'production') {
+  const requiredEnvVars = [
+    'DB_HOST',
+    'DB_USER',
+    'DB_PASSWORD',
+    'DB_NAME',
+    'JWT_SECRET'
+  ];
+  
+  const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+  
+  if (missingVars.length > 0) {
+    // eslint-disable-next-line no-console
+    console.error('FATAL: Missing required environment variables in production:');
+    missingVars.forEach(varName => {
+      // eslint-disable-next-line no-console
+      console.error(`  - ${varName}`);
+    });
+    // eslint-disable-next-line no-console
+    console.error('\nPlease set these environment variables before starting the application.');
+    process.exit(1);
+  }
+
+  // Validate JWT_SECRET strength in production
+  if (process.env.JWT_SECRET && process.env.JWT_SECRET.length < 32) {
+    // eslint-disable-next-line no-console
+    console.error('FATAL: JWT_SECRET must be at least 32 characters long in production');
+    // eslint-disable-next-line no-console
+    console.error('Generate a strong secret using: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'base64\'))"');
+    process.exit(1);
+  }
+}
+
+// Configure SSL for database connection (Aiven uses self-signed certificates)
+const sslConfig = process.env.DB_SSL === 'true' 
+  ? {
+      rejectUnauthorized: false  // Required for Aiven and other managed databases with self-signed certs
+    }
+  : false;
+
 const pool = mysql.createPool({
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
@@ -14,8 +55,7 @@ const pool = mysql.createPool({
   keepAliveInitialDelay: 0,
   acquireTimeout: 60000,
   timeout: 60000,
-  reconnect: true,
-  ssl: process.env.DB_SSL === 'true' ? {} : false,
+  ssl: sslConfig,
 });
 
 pool.on('error', (error) => {

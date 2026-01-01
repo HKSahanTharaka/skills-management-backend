@@ -1,0 +1,15 @@
+node_modules
+npm-debug.log
+coverage
+.env
+.git
+.gitignore
+*.md
+tests
+jest.config.js
+eslint.config.js
+.eslintrc*
+.prettierrc*
+test-results
+playwright-report
+

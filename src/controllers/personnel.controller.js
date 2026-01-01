@@ -236,7 +236,8 @@ const getAllPersonnel = async (req, res, next) => {
 
     const limitValue = parseInt(limit);
     const offsetValue = (parseInt(page) - 1) * limitValue;
-    query += ` ORDER BY p.created_at DESC LIMIT ${limitValue} OFFSET ${offsetValue}`;
+    query += ` ORDER BY p.created_at DESC LIMIT ? OFFSET ?`;
+    params.push(limitValue, offsetValue);
 
     const [personnel] = await pool.execute(query, params);
 

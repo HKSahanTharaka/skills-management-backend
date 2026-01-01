@@ -99,7 +99,7 @@ describe('Auth Middleware', () => {
           email: testUser.email,
           role: testUser.role,
         },
-        process.env.JWT_SECRET || 'test-secret',
+        process.env.JWT_SECRET,
         { expiresIn: '-1h' } // Already expired
       );
 
@@ -178,7 +178,7 @@ describe('Auth Middleware', () => {
           role: 'manager',
           approval_status: 'approved',
         },
-        process.env.JWT_SECRET || 'test-secret',
+        process.env.JWT_SECRET,
         { expiresIn: '1h' }
       );
 
@@ -331,7 +331,7 @@ describe('Auth Middleware', () => {
   describe('Token Payload Validation', () => {
     it('should extract correct user info from token', async () => {
       const token = generateTestToken(testUser);
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'test-secret');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       expect(decoded.id).toBe(testUser.id);
       expect(decoded.email).toBe(testUser.email);
@@ -343,7 +343,7 @@ describe('Auth Middleware', () => {
 
     it('should have valid expiration time', () => {
       const token = generateTestToken(testUser);
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'test-secret');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       const currentTime = Math.floor(Date.now() / 1000);
       const expirationTime = decoded.exp;

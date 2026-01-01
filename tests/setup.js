@@ -54,6 +54,12 @@ global.createTestUser = async (userData = {}) => {
 // Helper to generate JWT token
 global.generateTestToken = (user) => {
   const jwt = require('jsonwebtoken');
+  const secret = process.env.JWT_SECRET;
+  
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable must be set for tests');
+  }
+  
   return jwt.sign(
     {
       id: user.id,
@@ -61,7 +67,7 @@ global.generateTestToken = (user) => {
       role: user.role,
       approval_status: user.approval_status,
     },
-    process.env.JWT_SECRET || 'test-secret',
+    secret,
     { expiresIn: '1h' }
   );
 };
