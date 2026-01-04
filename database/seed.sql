@@ -720,3 +720,9 @@ AND pav.end_date >= CURDATE()
 ORDER BY pav.availability_percentage DESC, p.experience_level DESC;
 
 SELECT '=== SEED DATA LOADED SUCCESSFULLY ===' AS '';
+
+-- Approve the admin user
+UPDATE users SET approval_status = 'approved' WHERE email = 'user@example.com' AND role = 'manager';
+
+-- Promote a regular user to admin
+UPDATE users SET role = 'admin' WHERE email = 'user@example.com';
