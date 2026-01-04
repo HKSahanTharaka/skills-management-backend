@@ -3,6 +3,12 @@ const router = express.Router();
 const { findMatchingPersonnel } = require('../controllers/matching.controller');
 const { authenticateToken, requireAnyRole } = require('../middleware/auth');
 
-router.get('/project/:id', authenticateToken, requireAnyRole(['admin', 'manager']), findMatchingPersonnel);
+// Route: GET /api/matching/projects/:id/personnel
+router.get(
+  '/projects/:id/personnel',
+  authenticateToken,
+  requireAnyRole(['admin', 'manager']),
+  findMatchingPersonnel
+);
 
 module.exports = router;

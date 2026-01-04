@@ -12,7 +12,6 @@ const createProject = async (req, res, next) => {
       required_skills,
     } = req.body;
 
-    // Validate required fields
     if (!project_name || !start_date || !end_date) {
       return res.status(400).json({
         success: false,
@@ -23,8 +22,11 @@ const createProject = async (req, res, next) => {
       });
     }
 
-    // Validate required_skills
-    if (!required_skills || !Array.isArray(required_skills) || required_skills.length === 0) {
+    if (
+      !required_skills ||
+      !Array.isArray(required_skills) ||
+      required_skills.length === 0
+    ) {
       return res.status(400).json({
         success: false,
         error: {
@@ -33,7 +35,6 @@ const createProject = async (req, res, next) => {
       });
     }
 
-    // Validate status enum
     const validStatuses = ['Planning', 'Active', 'Completed', 'On Hold'];
     if (status && !validStatuses.includes(status)) {
       return res.status(400).json({
@@ -44,7 +45,6 @@ const createProject = async (req, res, next) => {
       });
     }
 
-    // Validate dates format and end_date must be after start_date
     const startDateObj = new Date(start_date);
     const endDateObj = new Date(end_date);
 
@@ -75,13 +75,11 @@ const createProject = async (req, res, next) => {
       });
     }
 
-    // Insert into database
     const [result] = await pool.execute(
       'INSERT INTO projects (project_name, description, start_date, end_date, status) VALUES (?, ?, ?, ?, ?)',
       [project_name, description || null, start_date, end_date, status]
     );
 
-    // Insert required skills
     if (required_skills && required_skills.length > 0) {
       for (const skill of required_skills) {
         await pool.execute(
@@ -91,7 +89,6 @@ const createProject = async (req, res, next) => {
       }
     }
 
-    // Fetch the created project with required skills
     const [createdProjects] = await pool.execute(
       `SELECT 
         p.*,
@@ -110,20 +107,20 @@ const createProject = async (req, res, next) => {
       [result.insertId]
     );
 
-    // Format dates to YYYY-MM-DD
     const project = createdProjects[0];
     if (project) {
       project.start_date = formatDate(project.start_date);
       project.end_date = formatDate(project.end_date);
-      
+
       // Parse required_skills JSON
       if (project.required_skills) {
-        const skillsData = typeof project.required_skills === 'string' 
-          ? JSON.parse(project.required_skills) 
-          : project.required_skills;
-        
-        project.required_skills = Array.isArray(skillsData) 
-          ? skillsData.filter(skill => skill && skill.skill_id !== null)
+        const skillsData =
+          typeof project.required_skills === 'string'
+            ? JSON.parse(project.required_skills)
+            : project.required_skills;
+
+        project.required_skills = Array.isArray(skillsData)
+          ? skillsData.filter((skill) => skill && skill.skill_id !== null)
           : [];
       } else {
         project.required_skills = [];
@@ -334,8 +331,14 @@ const getProjectById = async (req, res, next) => {
 const updateProject = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { project_name, description, start_date, end_date, status, required_skills } =
-      req.body;
+    const {
+      project_name,
+      description,
+      start_date,
+      end_date,
+      status,
+      required_skills,
+    } = req.body;
 
     // Check project exists
     const [existingProjects] = await pool.execute(
@@ -491,15 +494,16 @@ const updateProject = async (req, res, next) => {
     if (project) {
       project.start_date = formatDate(project.start_date);
       project.end_date = formatDate(project.end_date);
-      
+
       // Parse required_skills JSON
       if (project.required_skills) {
-        const skillsData = typeof project.required_skills === 'string' 
-          ? JSON.parse(project.required_skills) 
-          : project.required_skills;
-        
-        project.required_skills = Array.isArray(skillsData) 
-          ? skillsData.filter(skill => skill && skill.skill_id !== null)
+        const skillsData =
+          typeof project.required_skills === 'string'
+            ? JSON.parse(project.required_skills)
+            : project.required_skills;
+
+        project.required_skills = Array.isArray(skillsData)
+          ? skillsData.filter((skill) => skill && skill.skill_id !== null)
           : [];
       } else {
         project.required_skills = [];

@@ -1,4 +1,5 @@
-const errorHandler = (err, req, res) => {
+// eslint-disable-next-line no-unused-vars
+const errorHandler = (err, req, res, next) => {
   const timestamp = new Date().toISOString();
   const errorLog = {
     timestamp,
@@ -31,14 +32,11 @@ const errorHandler = (err, req, res) => {
     statusCode = 400;
     message = 'Validation Error';
     errorDetails = err.errors || err.details || [err.message];
-  }
-  else if (err.array && typeof err.array === 'function') {
+  } else if (err.array && typeof err.array === 'function') {
     statusCode = 400;
     message = 'Validation Error';
     errorDetails = err.array();
-  }
-
-  else if (
+  } else if (
     err.name === 'UnauthorizedError' ||
     err.name === 'JsonWebTokenError' ||
     err.name === 'TokenExpiredError' ||
@@ -46,29 +44,21 @@ const errorHandler = (err, req, res) => {
   ) {
     statusCode = 401;
     message = 'Unauthorized: Invalid or missing authentication token';
-  }
-
-  else if (err.name === 'ForbiddenError' || statusCode === 403) {
+  } else if (err.name === 'ForbiddenError' || statusCode === 403) {
     statusCode = 403;
     message =
       err.message ||
       'Forbidden: You do not have permission to access this resource';
-  }
-
-  else if (err.name === 'NotFoundError' || statusCode === 404) {
+  } else if (err.name === 'NotFoundError' || statusCode === 404) {
     statusCode = 404;
     message = err.message || 'Resource not found';
-  }
-  else if (err.code === 'ER_NO_REFERENCED_ROW_2') {
+  } else if (err.code === 'ER_NO_REFERENCED_ROW_2') {
     statusCode = 404;
     message = 'Referenced record not found';
-  }
-  else if (err.code === 'ER_NO_SUCH_TABLE') {
+  } else if (err.code === 'ER_NO_SUCH_TABLE') {
     statusCode = 404;
     message = 'Database table not found';
-  }
-
-  else if (err.code === 'ER_DUP_ENTRY') {
+  } else if (err.code === 'ER_DUP_ENTRY') {
     statusCode = 409;
     message = 'Duplicate entry: This record already exists';
 
@@ -79,13 +69,10 @@ const errorHandler = (err, req, res) => {
         message: 'This value already exists in the database',
       };
     }
-  }
-  else if (err.code === 'ER_DUP_KEY') {
+  } else if (err.code === 'ER_DUP_KEY') {
     statusCode = 409;
     message = 'Duplicate key: This record violates a unique constraint';
-  }
-
-  else if (err.code && err.code.startsWith('ER_')) {
+  } else if (err.code && err.code.startsWith('ER_')) {
     statusCode = 500;
     message = 'Database error occurred';
 
@@ -117,22 +104,17 @@ const errorHandler = (err, req, res) => {
           };
         }
     }
-  }
-  else if (
+  } else if (
     err.code === 'PROTOCOL_CONNECTION_LOST' ||
     err.code === 'ECONNREFUSED' ||
     err.code === 'ETIMEDOUT'
   ) {
     statusCode = 500;
     message = 'Database connection error';
-  }
-
-  else if (err.name === 'SyntaxError' || err.name === 'CastError') {
+  } else if (err.name === 'SyntaxError' || err.name === 'CastError') {
     statusCode = 400;
     message = 'Invalid request format or data type';
-  }
-
-  else if (err.name === 'TooManyRequestsError' || statusCode === 429) {
+  } else if (err.name === 'TooManyRequestsError' || statusCode === 429) {
     statusCode = 429;
     message = err.message || 'Too many requests. Please try again later.';
   }

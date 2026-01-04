@@ -10,7 +10,6 @@ const setPersonnelAvailability = async (req, res, next) => {
       notes,
     } = req.body;
 
-    // Validate required fields
     if (!personnel_id || !start_date || !end_date) {
       return res.status(400).json({
         success: false,
@@ -21,7 +20,6 @@ const setPersonnelAvailability = async (req, res, next) => {
       });
     }
 
-    // Validate availability percentage
     if (availability_percentage < 0 || availability_percentage > 100) {
       return res.status(400).json({
         success: false,
@@ -31,7 +29,6 @@ const setPersonnelAvailability = async (req, res, next) => {
       });
     }
 
-    // Validate dates format and end_date must be after start_date
     const startDateObj = new Date(start_date);
     const endDateObj = new Date(end_date);
 
@@ -39,7 +36,8 @@ const setPersonnelAvailability = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Invalid start_date format. Use YYYY-MM-DD format',
+          message: 'Invalid start date format.',
+          hint: 'Please use YYYY-MM-DD format (e.g., 2025-01-15)',
         },
       });
     }
@@ -48,7 +46,8 @@ const setPersonnelAvailability = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Invalid end_date format. Use YYYY-MM-DD format',
+          message: 'Invalid end date format.',
+          hint: 'Please use YYYY-MM-DD format (e.g., 2025-12-31)',
         },
       });
     }
@@ -57,12 +56,12 @@ const setPersonnelAvailability = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'end_date must be after start_date',
+          message: 'End date must be after start date.',
+          hint: 'The end date should be at least one day after the start date.',
         },
       });
     }
 
-    // Validate personnel exists
     const [personnel] = await pool.execute(
       'SELECT id FROM personnel WHERE id = ?',
       [personnel_id]
@@ -77,7 +76,6 @@ const setPersonnelAvailability = async (req, res, next) => {
       });
     }
 
-    // Check for overlapping availability periods
     const [overlapping] = await pool.execute(
       `SELECT id FROM personnel_availability 
        WHERE personnel_id = ? 
@@ -91,12 +89,12 @@ const setPersonnelAvailability = async (req, res, next) => {
         success: false,
         error: {
           message:
-            'Availability period overlaps with existing availability periods. Please update or delete the existing period first.',
+            'This date range overlaps with an existing availability period. Please adjust the dates or update the existing period instead.',
+          hint: 'You cannot have overlapping availability periods. Each date should only belong to one availability period.',
         },
       });
     }
 
-    // Insert into personnel_availability
     const [result] = await pool.execute(
       'INSERT INTO personnel_availability (personnel_id, start_date, end_date, availability_percentage, notes) VALUES (?, ?, ?, ?, ?)',
       [
@@ -108,7 +106,6 @@ const setPersonnelAvailability = async (req, res, next) => {
       ]
     );
 
-    // Fetch the created availability period
     const [createdAvailability] = await pool.execute(
       'SELECT * FROM personnel_availability WHERE id = ?',
       [result.insertId]
@@ -129,7 +126,6 @@ const getPersonnelAvailability = async (req, res, next) => {
     const { personnelId } = req.params;
     const { start_date, end_date } = req.query;
 
-    // Validate personnel exists
     const [personnel] = await pool.execute(
       'SELECT id, name FROM personnel WHERE id = ?',
       [personnelId]

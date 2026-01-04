@@ -38,7 +38,8 @@ const createProjectAllocation = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Invalid start_date format. Use YYYY-MM-DD format',
+          message: 'Invalid start date format.',
+          hint: 'Please use YYYY-MM-DD format (e.g., 2025-01-15)',
         },
       });
     }
@@ -47,7 +48,8 @@ const createProjectAllocation = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Invalid end_date format. Use YYYY-MM-DD format',
+          message: 'Invalid end date format.',
+          hint: 'Please use YYYY-MM-DD format (e.g., 2025-12-31)',
         },
       });
     }
@@ -56,12 +58,12 @@ const createProjectAllocation = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'end_date must be after start_date',
+          message: 'End date must be after start date.',
+          hint: 'The allocation period must span at least one day.',
         },
       });
     }
 
-    // Validate project exists
     const [projects] = await pool.execute(
       'SELECT id, project_name FROM projects WHERE id = ?',
       [project_id]
@@ -76,7 +78,6 @@ const createProjectAllocation = async (req, res, next) => {
       });
     }
 
-    // Validate personnel exists
     const [personnel] = await pool.execute(
       'SELECT id, name FROM personnel WHERE id = ?',
       [personnel_id]
@@ -102,7 +103,8 @@ const createProjectAllocation = async (req, res, next) => {
       return res.status(409).json({
         success: false,
         error: {
-          message: `Personnel is not available for the requested period. Average availability: ${availabilityCheck.averageAvailability}%, Required: ${allocation_percentage}%`,
+          message: `Cannot allocate: Personnel availability is ${availabilityCheck.averageAvailability}%, but ${allocation_percentage}% allocation requested.`,
+          hint: `The person is only ${availabilityCheck.averageAvailability}% available during this period. Either reduce the allocation percentage or update their availability.`,
           conflicts: availabilityCheck.conflicts,
         },
       });
@@ -122,7 +124,8 @@ const createProjectAllocation = async (req, res, next) => {
         success: false,
         error: {
           message:
-            'Allocation already exists for this project and personnel in the specified date range',
+            'This person is already allocated to this project during the specified dates.',
+          hint: 'Check the project team roster or update the existing allocation instead of creating a new one.',
         },
       });
     }
@@ -156,7 +159,15 @@ const createProjectAllocation = async (req, res, next) => {
         return res.status(409).json({
           success: false,
           error: {
-            message: `Total allocation would exceed 100%. Current allocations (${maxConcurrentAllocation - allocation_percentage}%) plus requested allocation (${allocation_percentage}%) would total ${maxConcurrentAllocation}%.`,
+            message: `Over-allocation detected: This would result in ${maxConcurrentAllocation}% total allocation (exceeds 100% limit).`,
+            hint: `Current allocations: ${maxConcurrentAllocation - allocation_percentage}% + Requested: ${allocation_percentage}% = ${maxConcurrentAllocation}%. Consider reducing allocation percentage or adjusting dates.`,
+            details: {
+              currentAllocation:
+                maxConcurrentAllocation - allocation_percentage,
+              requestedAllocation: allocation_percentage,
+              totalAllocation: maxConcurrentAllocation,
+              maxAllowed: 100,
+            },
           },
         });
       }
@@ -336,6 +347,7 @@ const getProjectTeam = async (req, res, next) => {
     const [allocations] = await pool.execute(
       `SELECT 
         pa.id,
+        pa.project_id,
         pa.personnel_id,
         p.name as personnel_name,
         p.email as personnel_email,
@@ -346,9 +358,11 @@ const getProjectTeam = async (req, res, next) => {
         pa.end_date,
         pa.role_in_project,
         pa.created_at,
-        pa.updated_at
+        pa.updated_at,
+        proj.project_name
       FROM project_allocations pa
       INNER JOIN personnel p ON pa.personnel_id = p.id
+      INNER JOIN projects proj ON pa.project_id = proj.id
       WHERE pa.project_id = ?
       ORDER BY pa.created_at DESC`,
       [id]
@@ -470,7 +484,7 @@ const updateProjectAllocation = async (req, res, next) => {
       );
 
       let maxConcurrentAllocation = finalAllocationPercentage;
-      
+
       for (const existingAlloc of overlappingAllocations) {
         const overlapStart = new Date(
           Math.max(new Date(finalStartDate), new Date(existingAlloc.start_date))
@@ -630,11 +644,256 @@ const getPersonnelAllocations = async (req, res, next) => {
   }
 };
 
+const getTeamUtilization = async (req, res, next) => {
+  try {
+    const { months = 3 } = req.query;
+
+    const today = new Date();
+    const endDate = new Date();
+    endDate.setMonth(endDate.getMonth() + parseInt(months));
+
+    const startDateStr = today.toISOString().split('T')[0];
+    const endDateStr = endDate.toISOString().split('T')[0];
+
+    const [personnelWithAllocations] = await pool.execute(
+      `SELECT 
+        p.id as personnel_id,
+        p.name as personnel_name,
+        p.role_title,
+        p.experience_level,
+        p.profile_image_url,
+        pa.project_id,
+        pr.project_name,
+        pa.allocation_percentage,
+        pa.start_date,
+        pa.end_date,
+        pa.role_in_project
+      FROM personnel p
+      LEFT JOIN project_allocations pa ON p.id = pa.personnel_id
+        AND pa.end_date >= ?
+        AND pa.start_date <= ?
+      LEFT JOIN projects pr ON pa.project_id = pr.id
+      ORDER BY p.name, pa.start_date`,
+      [startDateStr, endDateStr]
+    );
+
+    const personnelMap = new Map();
+
+    personnelWithAllocations.forEach((row) => {
+      if (!personnelMap.has(row.personnel_id)) {
+        personnelMap.set(row.personnel_id, {
+          personnel_id: row.personnel_id,
+          personnel_name: row.personnel_name,
+          role_title: row.role_title,
+          experience_level: row.experience_level,
+          profile_image_url: row.profile_image_url,
+          allocations: [],
+          total_utilization: 0,
+        });
+      }
+
+      if (row.project_id) {
+        personnelMap.get(row.personnel_id).allocations.push({
+          project_id: row.project_id,
+          project_name: row.project_name,
+          allocation_percentage: row.allocation_percentage,
+          start_date: row.start_date,
+          end_date: row.end_date,
+          role_in_project: row.role_in_project,
+        });
+      }
+    });
+
+    const utilizationData = Array.from(personnelMap.values()).map((person) => {
+      if (person.allocations.length === 0) {
+        return {
+          ...person,
+          total_utilization: 0,
+          utilization_by_month: generateEmptyMonths(startDateStr, endDateStr),
+        };
+      }
+
+      const utilizationByMonth = calculateUtilizationByMonth(
+        person.allocations,
+        startDateStr,
+        endDateStr
+      );
+
+      const avgUtilization =
+        utilizationByMonth.reduce((sum, month) => sum + month.utilization, 0) /
+        utilizationByMonth.length;
+
+      return {
+        ...person,
+        total_utilization: Math.round(avgUtilization),
+        utilization_by_month: utilizationByMonth,
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      data: utilizationData,
+      date_range: {
+        start: startDateStr,
+        end: endDateStr,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+function generateEmptyMonths(startDate, endDate) {
+  const months = [];
+  const current = new Date(startDate);
+  const end = new Date(endDate);
+
+  while (current <= end) {
+    months.push({
+      month: current.toISOString().slice(0, 7), // YYYY-MM format
+      month_label: current.toLocaleDateString('en-US', {
+        month: 'short',
+        year: 'numeric',
+      }),
+      utilization: 0,
+    });
+    current.setMonth(current.getMonth() + 1);
+  }
+
+  return months;
+}
+
+function calculateUtilizationByMonth(allocations, startDate, endDate) {
+  const months = [];
+  const current = new Date(startDate);
+  const end = new Date(endDate);
+
+  while (current <= end) {
+    const monthStart = new Date(current.getFullYear(), current.getMonth(), 1);
+    const monthEnd = new Date(current.getFullYear(), current.getMonth() + 1, 0);
+
+    let monthUtilization = 0;
+
+    allocations.forEach((allocation) => {
+      const allocStart = new Date(allocation.start_date);
+      const allocEnd = new Date(allocation.end_date);
+
+      if (allocStart <= monthEnd && allocEnd >= monthStart) {
+        monthUtilization += allocation.allocation_percentage;
+      }
+    });
+
+    months.push({
+      month: current.toISOString().slice(0, 7), // YYYY-MM format
+      month_label: current.toLocaleDateString('en-US', {
+        month: 'short',
+        year: 'numeric',
+      }),
+      utilization: Math.min(monthUtilization, 200), // Cap at 200% for display
+    });
+
+    current.setMonth(current.getMonth() + 1);
+  }
+
+  return months;
+}
+
+const getAllAllocations = async (req, res, next) => {
+  try {
+    const { project_id, personnel_id } = req.query;
+
+    let query = `SELECT 
+      pa.id,
+      pa.project_id,
+      pa.personnel_id,
+      pa.allocation_percentage,
+      pa.start_date,
+      pa.end_date,
+      pa.role_in_project,
+      pa.created_at,
+      pa.updated_at,
+      proj.project_name,
+      p.name as personnel_name
+    FROM project_allocations pa
+    INNER JOIN projects proj ON pa.project_id = proj.id
+    INNER JOIN personnel p ON pa.personnel_id = p.id
+    WHERE 1=1`;
+
+    const params = [];
+
+    if (project_id) {
+      query += ' AND pa.project_id = ?';
+      params.push(project_id);
+    }
+
+    if (personnel_id) {
+      query += ' AND pa.personnel_id = ?';
+      params.push(personnel_id);
+    }
+
+    query += ' ORDER BY pa.created_at DESC';
+
+    const [allocations] = await pool.execute(query, params);
+
+    res.status(200).json({
+      success: true,
+      data: allocations,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getAllocationById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const [allocations] = await pool.execute(
+      `SELECT 
+        pa.id,
+        pa.project_id,
+        pa.personnel_id,
+        pa.allocation_percentage,
+        pa.start_date,
+        pa.end_date,
+        pa.role_in_project,
+        pa.created_at,
+        pa.updated_at,
+        proj.project_name,
+        p.name as personnel_name
+      FROM project_allocations pa
+      INNER JOIN projects proj ON pa.project_id = proj.id
+      INNER JOIN personnel p ON pa.personnel_id = p.id
+      WHERE pa.id = ?`,
+      [id]
+    );
+
+    if (allocations.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          message: 'Allocation not found',
+        },
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: allocations[0],
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createProjectAllocation,
+  getAllAllocations,
+  getAllocationById,
   getPersonnelUtilization,
   getProjectTeam,
   updateProjectAllocation,
   deleteProjectAllocation,
   getPersonnelAllocations,
+  getTeamUtilization,
 };

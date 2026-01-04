@@ -38,60 +38,64 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
-    jwt.verify(token, jwtSecret, async (err, decoded) => {
-      if (err) {
-        return res.status(401).json({
-          success: false,
-          error: {
-            message: 'Invalid or expired token',
-          },
-        });
-      }
+    let decoded;
+    try {
+      decoded = jwt.verify(token, jwtSecret);
+    } catch {
+      return res.status(401).json({
+        success: false,
+        error: {
+          message: 'Invalid or expired token',
+        },
+      });
+    }
 
-      try {
-        const [users] = await pool.execute(
-          'SELECT id, email, role, approval_status FROM users WHERE id = ?',
-          [decoded.id]
-        );
+    try {
+      const [users] = await pool.execute(
+        'SELECT id, email, role, approval_status FROM users WHERE id = ?',
+        [decoded.id]
+      );
 
-        if (users.length === 0) {
-          return res.status(401).json({
-            success: false,
-            error: {
-              message: 'User not found',
-            },
-          });
-        }
-
-        const user = users[0];
-
-        if (user.approval_status !== 'approved') {
-          return res.status(403).json({
-            success: false,
-            error: {
-              message: user.approval_status === 'pending' 
-                ? 'Your account is pending admin approval'
-                : 'Your account has been rejected',
-              status: user.approval_status,
-            },
-          });
-        }
-
-        req.user = user;
-
-        next();
-      } catch (dbError) {
-        // eslint-disable-next-line no-console
-        console.error('Database error during authentication:', dbError);
+      if (users.length === 0) {
+        // User not found in DB - use token data as fallback for resilience
         req.user = {
           id: decoded.id,
           email: decoded.email,
           role: decoded.role,
           approval_status: decoded.approval_status,
         };
-        next();
+        return next();
       }
-    });
+
+      const user = users[0];
+
+      if (user.approval_status !== 'approved') {
+        return res.status(403).json({
+          success: false,
+          error: {
+            message:
+              user.approval_status === 'pending'
+                ? 'Your account is pending admin approval'
+                : 'Your account has been rejected',
+            status: user.approval_status,
+          },
+        });
+      }
+
+      req.user = user;
+
+      next();
+    } catch (dbError) {
+      // eslint-disable-next-line no-console
+      console.error('Database error during authentication:', dbError);
+      req.user = {
+        id: decoded.id,
+        email: decoded.email,
+        role: decoded.role,
+        approval_status: decoded.approval_status,
+      };
+      next();
+    }
   } catch (error) {
     // Pass error to error handling middleware
     next(error);

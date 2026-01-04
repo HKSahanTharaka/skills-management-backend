@@ -8,9 +8,8 @@ const personnelPermissions = {
   canViewAllPersonnel: (user) => {
     return user.role === ROLES.ADMIN || user.role === ROLES.MANAGER;
   },
-  
+
   canViewPersonnelDetail: (user) => {
-    // Both admin and manager can view anyone
     return user.role === ROLES.ADMIN || user.role === ROLES.MANAGER;
   },
 
@@ -21,13 +20,11 @@ const personnelPermissions = {
 
   // Update permissions
   canUpdatePersonnel: (user) => {
-    // Both admin and manager can update anyone
     return user.role === ROLES.ADMIN || user.role === ROLES.MANAGER;
   },
 
-  // Delete permissions
+  // Delete permissions - Only ADMIN
   canDeletePersonnel: (user) => {
-    // Only ADMIN can delete personnel
     return user.role === ROLES.ADMIN;
   },
 
@@ -40,7 +37,6 @@ const personnelPermissions = {
 const skillsPermissions = {
   // View permissions
   canViewSkills: () => {
-    // All authenticated users can view skills
     return true;
   },
 
@@ -54,26 +50,21 @@ const skillsPermissions = {
     return user.role === ROLES.ADMIN || user.role === ROLES.MANAGER;
   },
 
-  // Delete permissions
+  // Delete permissions - Only ADMIN
   canDeleteSkill: (user) => {
-    // Only ADMIN can delete skills
     return user.role === ROLES.ADMIN;
   },
 };
 
 const personnelSkillsPermissions = {
-  // Assign skills to someone
   canAssignSkills: (user) => {
-    // Both admin and manager can assign to anyone
     return user.role === ROLES.ADMIN || user.role === ROLES.MANAGER;
   },
 
-  // Update someone's skill proficiency
   canUpdateSkillProficiency: (user) => {
     return user.role === ROLES.ADMIN || user.role === ROLES.MANAGER;
   },
 
-  // Remove skills from someone
   canRemoveSkills: (user) => {
     return user.role === ROLES.ADMIN || user.role === ROLES.MANAGER;
   },
@@ -86,7 +77,6 @@ const projectsPermissions = {
   },
 
   canViewProject: (user) => {
-    // Both admin and manager can view all
     return user.role === ROLES.ADMIN || user.role === ROLES.MANAGER;
   },
 
@@ -100,13 +90,11 @@ const projectsPermissions = {
     return user.role === ROLES.ADMIN || user.role === ROLES.MANAGER;
   },
 
-  // Delete permissions
+  // Delete permissions - Only ADMIN
   canDeleteProject: (user) => {
-    // Only ADMIN can delete projects
     return user.role === ROLES.ADMIN;
   },
 
-  // Required skills management
   canManageRequiredSkills: (user) => {
     return user.role === ROLES.ADMIN || user.role === ROLES.MANAGER;
   },
@@ -149,7 +137,8 @@ const availabilityPermissions = {
 
   // Delete permissions
   canDeleteAvailability: (user) => {
-    return user.role === ROLES.ADMIN || user.role === ROLES.MANAGER;
+    // Only ADMIN can delete availability periods
+    return user.role === ROLES.ADMIN;
   },
 };
 
@@ -243,6 +232,7 @@ const checkPermission = (permissionFunction, user, ...args) => {
   try {
     return permissionFunction(user, ...args);
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Permission check error:', error);
     return false;
   }
@@ -262,4 +252,3 @@ module.exports = {
   systemPermissions,
   checkPermission,
 };
-
